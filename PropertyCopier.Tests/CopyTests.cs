@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using FizzWare.NBuilder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace PropertyCopier.Tests
@@ -9,6 +10,8 @@ namespace PropertyCopier.Tests
     {
         //TODO: tests for updates
         //TODO: tests with multiple mappings e.g. Foo.BarID and Foo.Bar.ID test only sets prop once
+        //TODO: tests for existing objects
+        //TODO: tests for enumerations
 
         [TestMethod]
         public void CopyNumber()
@@ -72,6 +75,18 @@ namespace PropertyCopier.Tests
             Assert.AreEqual(1, dto.Children.Count());
             Assert.AreEqual(100, dto.Children.Single().ID);
             Assert.AreEqual("Child", dto.Children.Single().Name);
+        }
+
+        [TestMethod]
+        public void CopyExpressions()
+        {
+            var query = Builder<EnitiyOne>.CreateListOfSize(5).Build().AsQueryable();
+            var result = query.Select(Copy.Expression<EnitiyOne, DtoOne>());
+            Assert.AreEqual(5, result.OfType<DtoOne>().Count());
+            Assert.AreEqual(1, result.ElementAt(0).ID);
+            Assert.AreEqual("Name1", result.ElementAt(0).Name);
+            Assert.AreEqual(5, result.ElementAt(4).ID);
+            Assert.AreEqual("Name5", result.ElementAt(4).Name);
         }
     }
 

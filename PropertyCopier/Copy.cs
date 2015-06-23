@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace PropertyCopier
 {
@@ -45,6 +47,20 @@ namespace PropertyCopier
             where TSource : class
         {
             var result = new CopyFromEnumeration<TSource>(enumeration);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates expression to project types.
+        /// </summary>
+        /// <typeparam name="TSource">The type going in.</typeparam>
+        /// <typeparam name="TTarget">The type coming out.</typeparam>
+        /// <returns>Expression to transform type.</returns>
+        public static Expression<Func<TSource, TTarget>> Expression<TSource, TTarget>() 
+            where TTarget : class, new() 
+            where TSource : class
+        {
+            var result = PropertyCopier<TSource, TTarget>.Expression.Value;
             return result;
         }
 

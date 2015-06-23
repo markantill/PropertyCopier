@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq.Expressions;
 
 namespace PropertyCopier
 {
@@ -16,9 +17,14 @@ namespace PropertyCopier
 		// As this is compiled it is much faster than reflection.
 		#region Static Fields
 
-		private static readonly Lazy<Func<TSource, TTarget>> Copier =
+	    internal static readonly Lazy<Expression<Func<TSource, TTarget>>> Expression =
+            new Lazy<Expression<Func<TSource, TTarget>>>(
+	            () => ExpressionBuilder.CreateLambdaInitializer<TSource, TTarget>(),
+	            true);
+
+        internal static readonly Lazy<Func<TSource, TTarget>> Copier =
 			new Lazy<Func<TSource, TTarget>>(
-				() => ExpressionBuilder.CreateLambdaInitializer<TSource, TTarget>().Compile(), true);
+				() => Expression.Value.Compile(), true);
 
 		#endregion
 
