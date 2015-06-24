@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("PropertyCopier")]
 [assembly: AssemblyDescription("Copy object properties")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Mark Antill")]
 [assembly: AssemblyProduct("PropertyCopier")]
 [assembly: AssemblyCopyright("Copyright © Mark Antill 2015")]
 [assembly: AssemblyTrademark("")]
