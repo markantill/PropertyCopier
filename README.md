@@ -14,11 +14,11 @@ C# class to automatically copy properties between objects by creating expression
 
 Copy to new object:
 
-var entity = new EnitiyOne() { ID = 10 }
-var dto = Copy.PropertiesFrom(entity).ToNew<DtoOne>();
+    var entity = new EnitiyOne() { ID = 10 }
+    var dto = Copy.PropertiesFrom(entity).ToNew<DtoOne>();
 
 Copy to existing object:
 
-var dto = new DtoOne { ID = 0 };
-Copy.PropertiesFrom(new EnitiyOne() { ID = 10 }).ToExisting(dto);
+    var dto = new DtoOne { ID = 0 };
+    Copy.PropertiesFrom(new EnitiyOne() { ID = 10 }).ToExisting(dto);
 
