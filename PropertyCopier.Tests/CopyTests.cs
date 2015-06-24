@@ -85,6 +85,14 @@ namespace PropertyCopier.Tests
         }
 
         [TestMethod]
+        public void CopyNumberAndStringToExisting()
+        {
+            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10, Name = "Test" }).ToExisting(new DtoOne { ID = 0, Name = "" });
+            Assert.AreEqual(10, dto.ID);
+            Assert.AreEqual("Test", dto.Name);
+        }
+
+        [TestMethod]
         public void CopyExpressions()
         {
             var query = Builder<EnitiyOne>.CreateListOfSize(5).Build().AsQueryable();
