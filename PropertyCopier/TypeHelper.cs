@@ -7,7 +7,10 @@ using System.Reflection;
 
 namespace PropertyCopier
 {
-    public static class TypeHelper
+    /// <summary>
+    /// Helper methods for figuring out type related stuff.
+    /// </summary>
+    internal static class TypeHelper
     {
         /// <summary>
         /// Checks if the type implements the generic interface.
@@ -15,8 +18,7 @@ namespace PropertyCopier
         /// <param name="generic">The generic type.</param>
         /// <param name="toCheck">To check type.</param>
         /// <returns>The type of the first generic argument if the To check type implements the generic interface, otherwise null.</returns>
-        [Pure]
-        public static Type ImplementsGenericInterface(this Type toCheck, Type generic)
+        internal static Type ImplementsGenericInterface(this Type toCheck, Type generic)
         {
             var interfaces = toCheck.GetInterfaces();
             if (toCheck.IsInterface)
@@ -33,13 +35,23 @@ namespace PropertyCopier
             return result;
         }
 
-        public static bool IsScalar(object thing)
+        /// <summary>
+        /// Determines whether the specified object is scalar (value type or string).
+        /// </summary>
+        /// <param name="thing">The thing.</param>
+        /// <returns>True if scalar, false otherwise.</returns>
+        internal static bool IsScalar(object thing)
         {
             var type = thing.GetType();
             return type.IsValueType || type == typeof(string);
-        } 
+        }
 
-        public static IEnumerable<Type> GetBaseClassesAndInterfaces(this Type type)
+        /// <summary>
+        /// Gets the base classes and interfaces it implements.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        internal static IEnumerable<Type> GetBaseClassesAndInterfaces(this Type type)
         {
             return type.BaseType == typeof(object)
                 ? type.GetInterfaces()
@@ -50,7 +62,13 @@ namespace PropertyCopier
                     .Distinct();
         }
 
-        public static bool IsAssignableToGenericType(this Type givenType, Type genericType)
+        /// <summary>
+        /// Determines whether the given type is assignable to the specified generic type.
+        /// </summary>
+        /// <param name="givenType">Type of the given.</param>
+        /// <param name="genericType">Type of the generic.</param>
+        /// <returns></returns>
+        internal static bool IsAssignableToGenericType(this Type givenType, Type genericType)
         {
             if (givenType == null || genericType == null)
             {
@@ -63,6 +81,12 @@ namespace PropertyCopier
               || givenType.BaseType.IsAssignableToGenericType(genericType);
         }
 
+        /// <summary>
+        /// Determines whether the given type has an interface that maps to generic type definition.
+        /// </summary>
+        /// <param name="givenType">Type of the given.</param>
+        /// <param name="genericType">Type of the generic.</param>
+        /// <returns></returns>
         private static bool HasInterfaceThatMapsToGenericTypeDefinition(this Type givenType, Type genericType)
         {
             return givenType
@@ -71,6 +95,12 @@ namespace PropertyCopier
               .Any(it => it.GetGenericTypeDefinition() == genericType);
         }
 
+        /// <summary>
+        /// Mapses to generic type definition.
+        /// </summary>
+        /// <param name="givenType">Type of the given.</param>
+        /// <param name="genericType">Type of the generic.</param>
+        /// <returns></returns>
         private static bool MapsToGenericTypeDefinition(this Type givenType, Type genericType)
         {
             return genericType.IsGenericTypeDefinition
@@ -85,7 +115,7 @@ namespace PropertyCopier
         /// <param name="properties">The properties.</param>
         /// <param name="results">The results.</param>
         /// <returns></returns>
-        public static ICollection<Tuple<PropertyInfo, bool>> GetAllProperties(
+        internal static ICollection<Tuple<PropertyInfo, bool>> GetAllProperties(
             Type type, 
             string properties, 
             ICollection<Tuple<PropertyInfo, bool>> results = null)
@@ -120,7 +150,7 @@ namespace PropertyCopier
         /// <param name="type">The type.</param>
         /// <param name="properties">The properties.</param>
         /// <returns>Type of penultimate property, name of last property.</returns>
-        public static Tuple<Type, string> GetLastProperty(Type type, string properties)
+        internal static Tuple<Type, string> GetLastProperty(Type type, string properties)
         {
             var split = properties.Split('.');
             if (split.Length == 1)
@@ -142,7 +172,7 @@ namespace PropertyCopier
         /// </summary>
         /// <param name="property">The property.</param>
         /// <returns></returns>
-        public static Type GetIEnumerableGenericType(PropertyInfo property)
+        internal static Type GetIEnumerableGenericType(PropertyInfo property)
         {
             var underlyingType = property.PropertyType.ImplementsGenericInterface(typeof(IEnumerable<>));
             return underlyingType;
@@ -154,7 +184,7 @@ namespace PropertyCopier
         /// <param name="value">The value.</param>
         /// <param name="targetType">Type of the target.</param>
         /// <returns></returns>
-        public static object ChangeType(object value, Type targetType)
+        internal static object ChangeType(object value, Type targetType)
         {
             object result = null;
             if (value != null)
@@ -175,7 +205,7 @@ namespace PropertyCopier
         /// <param name="argTypes">The argument types.</param>
         /// <param name="flags">The binding flags.</param>
         /// <returns>Generic method.</returns>
-        public static MethodBase GetGenericMethod(
+        internal static MethodBase GetGenericMethod(
             Type type,
             string name,
             Type[] genericTypeArgs,
@@ -219,6 +249,9 @@ namespace PropertyCopier
             return t[0];
         }
 
+        /// <summary>
+        /// The dictionary of types that can be cast.
+        /// </summary>
         private static readonly Dictionary<Type, List<Type>> dict = new Dictionary<Type, List<Type>>()
         {
             {
@@ -287,7 +320,14 @@ namespace PropertyCopier
             { typeof(ushort), new List<Type> { typeof(byte), typeof(char) } },
             { typeof(short), new List<Type> { typeof(byte) } }
         };
-        public static bool IsCastableTo(this Type from, Type to)
+
+        /// <summary>
+        /// Determines whether from type is castable to the to type.
+        /// </summary>
+        /// <param name="from">From.</param>
+        /// <param name="to">To.</param>
+        /// <returns></returns>
+        internal static bool IsCastableTo(this Type from, Type to)
         {
             if (to.IsAssignableFrom(from))
             {
@@ -318,7 +358,13 @@ namespace PropertyCopier
             return castable;
         }
 
-        public static bool HasProperty(this Type type, string name)
+        /// <summary>
+        /// Determines whether the specified type has a property with the specified name..
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        internal static bool HasProperty(this Type type, string name)
         {
             return type.GetProperties().Any(pi => pi.Name == name);
         }
