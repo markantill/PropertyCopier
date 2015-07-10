@@ -32,10 +32,12 @@ copy PropertyCopier\bin\%config%\PropertyCopier.pdb Build\net40
 call %NuGet% pack "PropertyCopier\PropertyCopier.csproj" -IncludeReferencedProjects -symbols -o Build\net40 -p Configuration=%config% %version%
 
 :success
-exit 0
+echo YAY
+REM exit 0
 
 :failure
-exit -1
+echo BOO
+REM exit -1
 
 
 

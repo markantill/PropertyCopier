@@ -11,7 +11,7 @@ namespace PropertyCopier
     /// <summary>
     ///     Class for creating expression trees.
     /// </summary>
-    public static class ExpressionBuilder
+    internal static class ExpressionBuilder
     {
         #region Public Methods and Operators
 
@@ -23,7 +23,7 @@ namespace PropertyCopier
         /// <typeparam name="TTarget">The type of the target.</typeparam>
         /// <param name="scalarOnly">if set to <c>true</c> copy scalar properties only.</param>
         /// <returns>Lambda expression to initialise object.</returns>
-        public static Expression<Func<TSource, TTarget>> CreateLambdaInitializer<TSource, TTarget>(
+        internal static Expression<Func<TSource, TTarget>> CreateLambdaInitializer<TSource, TTarget>(
             bool scalarOnly = false)
         {
             // Were going to build an expression that looks like:
@@ -37,7 +37,7 @@ namespace PropertyCopier
             return copyExpression;
         }
 
-        public static LambdaExpression CreateLambdaInitializer(
+        internal static LambdaExpression CreateLambdaInitializer(
             Type source,
             Type target,
             bool scalarOnly = false)
@@ -53,6 +53,133 @@ namespace PropertyCopier
             return copyExpression;
         }
 
+        /// <summary>
+        ///     Creates the lambda property copier.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the source.</typeparam>
+        /// <typeparam name="TTarget">The type of the target.</typeparam>
+        /// <param name="scalarOnly">if set to <c>true</c> [scalar only].</param>
+        /// <returns>Expression to copy properties with same name and type.</returns>
+        internal static Expression<Func<TSource, TTarget, TTarget>> CreateLambdaPropertyCopier<TSource, TTarget>(
+            bool scalarOnly = false)
+        {
+            var sourceParameter = typeof(TSource).Parameter("source");
+            var targetParameter = typeof(TTarget).Parameter("target");
+            var sourceProperties = GetSourceProperties(typeof(TSource), scalarOnly);
+
+            // Copying properties is going to require building a statement (multi-line) lambda, 
+            // each entry in the list will be one line of "code" in the statement.
+            var exps = new List<Expression>();
+
+            var matches = GetMatchedProperties(sourceProperties, typeof(TTarget).GetProperties());
+            foreach (var match in matches)
+            {
+                var sourceExp = CreateSourceExpression<TSource, TTarget>(
+                    match.TargetProperty,
+                    match.SourceProperty,
+                    sourceParameter);
+                // Expressions will not do boxing or implicit conversions, so make sure the
+                // type is explicitly cast to the destination type.
+                var targetExp = Expression.Property(targetParameter, match.TargetProperty);
+                var setExp = targetExp.Assign(sourceExp);
+                exps.Add(setExp);
+            }
+
+            // Finally we want to return the result, there is no Return expression instead
+            // just make the last line of the method body what you want to return.
+            exps.Add(targetParameter);
+
+            Expression block = exps.Block();
+            var exp = Expression.Lambda<Func<TSource, TTarget, TTarget>>(
+                block,
+                sourceParameter,
+                targetParameter);
+            return exp;
+        }
+
+        /// <summary>
+        ///     Creates the expression for nested properties in the string.
+        /// </summary>
+        /// <param name="startingExpression">The staring expression, for example the inital parameter.</param>
+        /// <param name="propertyName">Name of the nested property e.g. "MyObject.MyProperty".</param>
+        /// <param name="finalType">The final type to cast to.</param>
+        /// <returns>Nested expressions with cast.</returns>
+        /// <remarks>
+        ///     Uses multiple return statements so that the last statement is the recursive call.
+        ///     This means the compiler can optimise the recursion to tail recursion.
+        /// </remarks>
+        internal static Expression CreateNestedPropertyExpression(
+            Expression startingExpression,
+            string propertyName,
+            Type finalType = null)
+        {
+            var split = propertyName.Split('.');
+            var nextPropertyName = split.First();
+            startingExpression = Expression.PropertyOrField(startingExpression, nextPropertyName);
+            if (split.Length == 1)
+            {
+                if (finalType != null)
+                {
+                    startingExpression = startingExpression.Convert(finalType);
+                }
+
+                return startingExpression;
+            }
+
+            propertyName = string.Join(".", split.Skip(1));
+            return CreateNestedPropertyExpression(startingExpression, propertyName, finalType);
+        }
+
+        /// <summary>
+        ///     Calls the specified enumerable method that takes a collection and an expression. e.g. Select etc.
+        /// </summary>
+        /// <param name="collection">The expression representing the collection.</param>
+        /// <param name="predicate">The expression that will be run.</param>
+        /// <param name="methodName">Name of the method.</param>
+        /// <returns>Expression representing calling the method.</returns>
+        internal static Expression CallEnumerableMethod(
+            Expression collection,
+            LambdaExpression predicate,
+            string methodName)
+        {
+            // Get the collections implementation of IEnumerable<T> so we can figure out what T is for it.
+            var collectionType = TypeHelper.GetIEnumerableImpl(collection.Type);
+
+            // Cast the collection to the IEnumerable<T> just for safety.
+            collection = Expression.Convert(collection, collectionType);
+
+            // Get the type of the element in the collection, T.
+            var elemType = collectionType.GetGenericArguments()[0];
+
+            // Get arg1, arg2 from Expression<Func<arg1, arg2>>
+            var expTypes = predicate.GetType().GetGenericArguments().First().GetGenericArguments().ToArray();
+
+            // Figure out what the type of the predicate must be, it must be Func<T, bool>
+            var predicateType = typeof(Func<,>).MakeGenericType(expTypes);
+
+            // Generate the Call Expressions
+            return GenerateMethodCallExpression(
+                collection,
+                predicate,
+                methodName,
+                predicateType,
+                elemType,
+                collectionType,
+                expTypes);
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Creates the lambda initializer body.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="target">The target.</param>
+        /// <param name="scalarOnly">if set to <c>true</c> scalar properties only are copied.</param>
+        /// <param name="sourceParameter">The source parameter.</param>
+        /// <returns>Expression for lambda body.</returns>
         private static Expression CreateLambdaInitializerBody(
             Type source,
             Type target,
@@ -168,291 +295,6 @@ namespace PropertyCopier
             return initializer;
         }
 
-        /// <summary>
-        ///     Creates the lambda property copier.
-        /// </summary>
-        /// <typeparam name="TSource">The type of the source.</typeparam>
-        /// <typeparam name="TTarget">The type of the target.</typeparam>
-        /// <param name="scalarOnly">if set to <c>true</c> [scalar only].</param>
-        /// <returns>Expression to copy properties with same name and type.</returns>
-        public static Expression<Func<TSource, TTarget, TTarget>> CreateLambdaPropertyCopier<TSource, TTarget>(
-            bool scalarOnly = false)
-        {
-            var sourceParameter = typeof(TSource).Parameter("source");
-            var targetParameter = typeof(TTarget).Parameter("target");
-            var sourceProperties = GetSourceProperties(typeof(TSource), scalarOnly);
-
-            // Copying properties is going to require building a statement (multi-line) lambda, 
-            // each entry in the list will be one line of "code" in the statement.
-            var exps = new List<Expression>();
-
-            var matches = GetMatchedProperties(sourceProperties, typeof(TTarget).GetProperties());
-            foreach (var match in matches)
-            {
-                var sourceExp = CreateSourceExpression<TSource, TTarget>(
-                    match.TargetProperty,
-                    match.SourceProperty,
-                    sourceParameter);
-                // Expressions will not do boxing or implicit conversions, so make sure the
-                // type is explicitly cast to the destination type.
-                var targetExp = Expression.Property(targetParameter, match.TargetProperty);
-                var setExp = targetExp.Assign(sourceExp);
-                exps.Add(setExp);
-            }
-
-            // Finally we want to return the result, there is no Return expression instead
-            // just make the last line of the method body what you want to return.
-            exps.Add(targetParameter);
-
-            Expression block = exps.Block();
-            var exp = Expression.Lambda<Func<TSource, TTarget, TTarget>>(
-                block,
-                sourceParameter,
-                targetParameter);
-            return exp;
-        }
-
-        /// <summary>
-        ///     Creates the equality expression.
-        /// </summary>
-        /// <typeparam name="TObject">The type of the entity.</typeparam>
-        /// <typeparam name="TProperty">The Type of the property.</typeparam>
-        /// <param name="propertyName">Name of the property.</param>
-        /// <param name="propertyValue">The property value.</param>
-        /// <returns>The expression for checking equality.</returns>
-        public static Expression<Func<TObject, bool>> Equality<TObject, TProperty>(
-            string propertyName,
-            TProperty propertyValue)
-            where TObject : class
-        {
-            var propertyType = typeof(TProperty);
-
-            var pe = Expression.Parameter(typeof(TObject), "p");
-            var expression =
-                Expression.Lambda<Func<TObject, bool>>(
-                    pe.Property(typeof(TObject).GetProperty(propertyName))
-                        .Equal(propertyValue.Constant(propertyType).Convert(propertyType)),
-                    pe);
-            return expression;
-        }
-
-        /// <summary>
-        ///     Creates the equality expression.
-        /// </summary>
-        /// <typeparam name="TObject">The type of the entity.</typeparam>
-        /// <param name="propertyName">Name of the property.</param>
-        /// <param name="propertyValue">The property value.</param>
-        /// <returns>The expression for checking equality.</returns>
-        public static Expression<Func<TObject, bool>> Equality<TObject>(
-            string propertyName,
-            object propertyValue)
-            where TObject : class
-        {
-            var objectType = typeof(TObject);
-            var propertyType = objectType.GetProperty(propertyName).PropertyType;
-
-            var pe = Expression.Parameter(objectType, "p");
-            var expression = Expression.Lambda<Func<TObject, bool>>(
-                Expression.Equal(
-                    Expression.Property(pe, objectType.GetProperty(propertyName)),
-                    Expression.Convert(Expression.Constant(propertyValue, propertyType), propertyType),
-                    false,
-                    objectType.GetMethod("op_Equality")),
-                pe);
-            return expression;
-        }
-
-        public static LambdaExpression Equality(
-            string propertyName,
-            object propertyValue,
-            Type type)
-        {
-            var objectType = type;
-            var propertyType = objectType.GetProperty(propertyName).PropertyType;
-            var pe = Expression.Parameter(objectType, "p");
-            var expression = Expression.Lambda(
-                Expression.Equal(
-                    Expression.Property(pe, objectType.GetProperty(propertyName)),
-                    Expression.Convert(Expression.Constant(propertyValue, propertyType), propertyType),
-                    false,
-                    objectType.GetMethod("op_Equality")),
-                pe);
-            return expression;
-        }
-
-        /// <summary>
-        ///     Creates the equality expression.
-        /// </summary>
-        /// <param name="propertyName">Name of the property.</param>
-        /// <param name="propertyValue">The property value.</param>
-        /// <returns>The expression for checking equality.</returns>
-        public static Expression<Func<object, bool>> Equality(
-            string propertyName,
-            object propertyValue)
-        {
-            return Equality<object>(propertyName, propertyValue);
-        }
-
-        /// <summary>
-        ///     Creates the is null expression.
-        /// </summary>
-        /// <typeparam name="TObject">The type of the entity.</typeparam>
-        /// <param name="propertyName">Name of the property.</param>
-        /// <returns>The expression for checking null.</returns>
-        public static Expression<Func<TObject, bool>> IsNull<TObject>(
-            string propertyName)
-            where TObject : class
-        {
-            var objectType = typeof(TObject);
-            var propertyType = objectType.GetProperty(propertyName).PropertyType;
-
-            var pe = Expression.Parameter(objectType, "p");
-            var expression = Expression.Lambda<Func<TObject, bool>>(
-                Expression.Equal(
-                    Expression.Property(pe, objectType.GetProperty(propertyName)),
-                    Expression.Convert(Expression.Constant(null, propertyType), propertyType),
-                    false,
-                    objectType.GetMethod("op_Equality")),
-                pe);
-            return expression;
-        }
-
-        /// <summary>
-        ///     Creates the expression for nested properties in the string.
-        /// </summary>
-        /// <param name="startingExpression">The staring expression, for example the inital parameter.</param>
-        /// <param name="propertyName">Name of the nested property e.g. "MyObject.MyProperty".</param>
-        /// <param name="finalType">The final type to cast to.</param>
-        /// <returns>Nested expressions with cast.</returns>
-        /// <remarks>
-        ///     Uses multiple return statements so that the last statement is the recursive call.
-        ///     This means the compiler can optimise the recursion to tail recursion.
-        /// </remarks>
-        public static Expression CreateNestedPropertyExpression(
-            Expression startingExpression,
-            string propertyName,
-            Type finalType = null)
-        {
-            var split = propertyName.Split('.');
-            var nextPropertyName = split.First();
-            startingExpression = Expression.PropertyOrField(startingExpression, nextPropertyName);
-            if (split.Length == 1)
-            {
-                if (finalType != null)
-                {
-                    startingExpression = startingExpression.Convert(finalType);
-                }
-
-                return startingExpression;
-            }
-
-            propertyName = string.Join(".", split.Skip(1));
-            return CreateNestedPropertyExpression(startingExpression, propertyName, finalType);
-        }
-
-        public static LambdaExpression CreatePropertyRetriever<T>(string propertyName)
-        {
-            var param = Expression.Parameter(typeof(T), "p");
-            var get = Expression.PropertyOrField(param, propertyName);
-            var lambda = Expression.Lambda(get, param);
-            return lambda;
-        }
-
-        /// <summary>
-        ///     Calls Any method on collection.
-        /// </summary>
-        /// <param name="collection">The expression representing the collection.</param>
-        /// <param name="predicate">The predicate that will be run.</param>
-        /// <returns>Expression representing calling the method.</returns>
-        public static Expression CallAny(Expression collection, Expression predicate)
-        {
-            return CallEnumerablePredicateMethod(collection, predicate, "Any");
-        }
-
-        /// <summary>
-        ///     Calls All method on collection.
-        /// </summary>
-        /// <param name="collection">The expression representing the collection.</param>
-        /// <param name="predicate">The predicate that will be run.</param>
-        /// <returns>Expression representing calling the method.</returns>
-        public static Expression CallAll(Expression collection, Expression predicate)
-        {
-            return CallEnumerablePredicateMethod(collection, predicate, "All");
-        }
-
-        /// <summary>
-        ///     Calls the specified enumerable method that takes a collection and a predicate. e.g. Any, All etc.
-        /// </summary>
-        /// <param name="collection">The expression representing the collection.</param>
-        /// <param name="predicate">The predicate that will be run.</param>
-        /// <param name="methodName">Name of the method.</param>
-        /// <returns>Expression representing calling the method.</returns>
-        public static Expression CallEnumerablePredicateMethod(
-            Expression collection,
-            Expression predicate,
-            string methodName)
-        {
-            // Get the collections implementation of IEnumerable<T> so we can figure out what T is for it.
-            var collectionType = TypeHelper.GetIEnumerableImpl(collection.Type);
-
-            // Cast the collection to the IEnumerable<T> just for safety.
-            collection = Expression.Convert(collection, collectionType);
-
-            // Get the type of the element in the collection, T.
-            var elemType = collectionType.GetGenericArguments()[0];
-
-            // Figure out what the type of the predicate must be, it must be Func<T, bool>
-            var predicateType = typeof(Func<,>).MakeGenericType(elemType, typeof(bool));
-
-            // Generate the Call Expressions
-            return GenerateMethodCallExpression(
-                collection,
-                predicate,
-                methodName,
-                predicateType,
-                elemType,
-                collectionType,
-                new[] { elemType });
-        }
-
-        /// <summary>
-        ///     Calls the specified enumerable method that takes a collection and an expression. e.g. Select etc.
-        /// </summary>
-        /// <param name="collection">The expression representing the collection.</param>
-        /// <param name="predicate">The expression that will be run.</param>
-        /// <param name="methodName">Name of the method.</param>
-        /// <returns>Expression representing calling the method.</returns>
-        public static Expression CallEnumerableMethod(
-            Expression collection,
-            LambdaExpression predicate,
-            string methodName)
-        {
-            // Get the collections implementation of IEnumerable<T> so we can figure out what T is for it.
-            var collectionType = TypeHelper.GetIEnumerableImpl(collection.Type);
-
-            // Cast the collection to the IEnumerable<T> just for safety.
-            collection = Expression.Convert(collection, collectionType);
-
-            // Get the type of the element in the collection, T.
-            var elemType = collectionType.GetGenericArguments()[0];
-
-            // Get arg1, arg2 from Expression<Func<arg1, arg2>>
-            var expTypes = predicate.GetType().GetGenericArguments().First().GetGenericArguments().ToArray();
-
-            // Figure out what the type of the predicate must be, it must be Func<T, bool>
-            var predicateType = typeof(Func<,>).MakeGenericType(expTypes);
-
-            // Generate the Call Expressions
-            return GenerateMethodCallExpression(
-                collection,
-                predicate,
-                methodName,
-                predicateType,
-                elemType,
-                collectionType,
-                expTypes);
-        }
-
         private static Expression GenerateMethodCallExpression(
             Expression collectionExpression,
             Expression delegateExpression,
@@ -494,10 +336,6 @@ namespace PropertyCopier
             // Actually call the method.
             return method.Call(collectionAsQueryable, Expression.Constant(delegateExpression));
         }
-
-        #endregion
-
-        #region Methods
 
         private static void CheckTypesAreCompatable(
             Type source,
@@ -587,8 +425,8 @@ namespace PropertyCopier
 
         internal class TypePair
         {
-            public PropertyInfo TargetProperty { get; set; }
-            public PropertyInfo SourceProperty { get; set; }
+            internal PropertyInfo TargetProperty { get; set; }
+            internal PropertyInfo SourceProperty { get; set; }
         }
 
         #endregion

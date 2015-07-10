@@ -18,6 +18,8 @@ namespace PropertyCopier
         /// <param name="scalarOnly">if set to <c>true</c> copy scalar properties only.</param>
         internal CopyFrom(TSource source, bool scalarOnly)
         {
+            if (source == null) throw new ArgumentNullException("source");
+
             _scalarOnly = scalarOnly;
             _source = source;
         }
@@ -69,6 +71,8 @@ namespace PropertyCopier
         public TTarget ToExisting<TTarget>(TTarget target)
             where TTarget : class, new()
         {
+            if (target == null) throw new ArgumentNullException("target");
+
             var result = ExistingCopier<TSource, TTarget>.CopyFrom(_source, target);
             return result;
         }

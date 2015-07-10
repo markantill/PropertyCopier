@@ -2,7 +2,7 @@
 
 namespace PropertyCopier
 {
-    public static class ExistingCopier<TSource, TTarget>
+    internal static class ExistingCopier<TSource, TTarget>
         where TSource : class
         where TTarget : class, new()
     {

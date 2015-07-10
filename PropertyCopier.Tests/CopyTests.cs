@@ -92,10 +92,30 @@ namespace PropertyCopier.Tests
         }
 
         [Test]
+        public void CopyNumberToExistingOtherFieldsUnchanged()
+        {
+            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10 }).ToExisting(new DtoTwo() { ID = 0, ChildName = "Child"});
+            Assert.AreEqual(10, dto.ID);
+            Assert.AreEqual("Child", dto.ChildName);
+        }
+
+        [Test]
         public void CopyExpressions()
         {
             var query = Builder<EnitiyOne>.CreateListOfSize(5).Build().AsQueryable();
             var result = query.Select(Copy.Expression<EnitiyOne, DtoOne>());
+            Assert.AreEqual(5, result.OfType<DtoOne>().Count());
+            Assert.AreEqual(1, result.ElementAt(0).ID);
+            Assert.AreEqual("Name1", result.ElementAt(0).Name);
+            Assert.AreEqual(5, result.ElementAt(4).ID);
+            Assert.AreEqual("Name5", result.ElementAt(4).Name);
+        }
+
+        [Test]
+        public void CopyQueryable()
+        {
+            var query = Builder<EnitiyOne>.CreateListOfSize(5).Build().AsQueryable();
+            var result = query.CopyEachTo<EnitiyOne, DtoOne>();
             Assert.AreEqual(5, result.OfType<DtoOne>().Count());
             Assert.AreEqual(1, result.ElementAt(0).ID);
             Assert.AreEqual("Name1", result.ElementAt(0).Name);
