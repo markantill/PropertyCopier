@@ -20,7 +20,7 @@ REM Build
 %WINDIR%\Microsoft.NET\Framework\v4.0.30319\msbuild PropertyCopier.sln /p:Configuration="%config%" /m /v:M /fl /flp:LogFile=msbuild.log;Verbosity=Normal /nr:false
 
 REM Unit tests
-packages\NUnit.Runners.2.6.4\tools PropertyCopier.Tests\bin\%config%\PropertyCopier.Tests.dll
+packages\NUnit.Runners.2.6.4\tools\nunit-console.exe PropertyCopier.Tests\bin\%config%\PropertyCopier.Tests.dll
 if not "%errorlevel%"=="0" goto failure
 
 REM Package
