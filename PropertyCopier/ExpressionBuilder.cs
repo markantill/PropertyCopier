@@ -234,10 +234,12 @@ namespace PropertyCopier
                 alreadyMatched.Add(joinedName.TargetProperty);
             }
 
+            targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+
             // Nested Child objects e.g. Foo.Owner = new OwnerDto { ID = bar.Owner.ID, Name = bar.Owner.Name }
             var joinedObjects =
                 from sProperty in sourceProperties
-                join tProperty in target.GetProperties()
+                join tProperty in targetProperties
                     on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
                 where sProperty.PropertyType != typeof(string)
                 where tProperty.PropertyType != typeof(string)
@@ -264,10 +266,12 @@ namespace PropertyCopier
                 alreadyMatched.Add(joinedObject.TargetProperty);
             }
 
+            targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+
             // Child enumerations e.g. Foo.Children = Bar.Children.Select(barchild => new ChildDto { ID = barchild.ID }
             var enumerations =
                 from sProperty in sourceProperties
-                join tProperty in target.GetProperties()
+                join tProperty in targetProperties
                     on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
                 where sProperty.PropertyType != typeof(string)
                 where tProperty.PropertyType != typeof(string)
