@@ -11,31 +11,21 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release 4.0|Any CPU = Release 4.0|Any CPU
-		Release 4.5.1|Any CPU = Release 4.5.1|Any CPU
 		Release 4.5|Any CPU = Release 4.5|Any CPU
-		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release 4.0|Any CPU.ActiveCfg = Release 4.0|Any CPU
 		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release 4.0|Any CPU.Build.0 = Release 4.0|Any CPU
-		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release 4.5.1|Any CPU.ActiveCfg = Release 4.5.1|Any CPU
-		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release 4.5.1|Any CPU.Build.0 = Release 4.5.1|Any CPU
 		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release 4.5|Any CPU.ActiveCfg = Release 4.5|Any CPU
 		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release 4.5|Any CPU.Build.0 = Release 4.5|Any CPU
-		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9B330F3F-A8F4-4149-B0B9-C467CF41BD53}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release 4.0|Any CPU.ActiveCfg = Release 4.0|Any CPU
 		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release 4.0|Any CPU.Build.0 = Release 4.0|Any CPU
-		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release 4.5.1|Any CPU.ActiveCfg = Release 4.5.1|Any CPU
-		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release 4.5.1|Any CPU.Build.0 = Release 4.5.1|Any CPU
 		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release 4.5|Any CPU.ActiveCfg = Release 4.5|Any CPU
 		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release 4.5|Any CPU.Build.0 = Release 4.5|Any CPU
-		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3EF0BF1D-48FD-4FA6-B98B-E81134D55AD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
