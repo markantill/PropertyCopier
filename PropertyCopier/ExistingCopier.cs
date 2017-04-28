@@ -2,9 +2,8 @@
 
 namespace PropertyCopier
 {
-    internal static class ExistingCopier<TSource, TTarget>
-        where TSource : class
-        where TTarget : class, new()
+    internal static class ExistingCopier<TSource, TTarget>        
+        where TTarget : new()
     {
         // Stores the delegate required to create a new object.
         // As this is compiled it is much faster than reflection.

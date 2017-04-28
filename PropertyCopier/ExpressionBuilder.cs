@@ -240,7 +240,7 @@ namespace PropertyCopier
 
             targetProperties = targetProperties.Except(alreadyMatched, new PropertyInfoComparer()).ToArray();
 
-            // Apply any specific rules.
+            // Apply any specific rules for those properties.
             var parmeterExpression = sourceParameter as ParameterExpression;
 
             if (parmeterExpression != null)
@@ -255,6 +255,12 @@ namespace PropertyCopier
                 targetProperties = targetProperties.Except(alreadyMatched).ToArray();
             }
             
+            // Any specific rules for the types
+            var knownMappings = GetKnownProperties(sourceProperties, targetProperties, mappingData);
+            foreach (var knownMapping in knownMappings)
+            {
+                
+            }
 
             // normal matches e.g. Foo.ID = Bar.ID
             var matches = GetMatchedProperties(sourceProperties, targetProperties);
@@ -324,7 +330,7 @@ namespace PropertyCopier
                     let enumerableTargetItemType = enumeration.TargetProperty.PropertyType.GetGenericArguments().First()
                     let childInitializser =
                         CreateLambdaInitializer(enumerableSourceItemType, enumerableTargetItemType, mappingData)
-                    let selectCall = CallEnumerableMethod(propExpression, childInitializser, "Select")
+                    let selectCall = CallEnumerableMethod(propExpression, childInitializser, nameof(Enumerable.Select))
                     select Expression.Bind(enumeration.TargetProperty, selectCall));
 
             // Create Expression for initialising object with correct values, the new MyClass part of the expression.            
@@ -424,7 +430,7 @@ namespace PropertyCopier
             var asQueryableMethod = (MethodInfo)
                 TypeHelper.GetGenericMethod(
                     typeof(Queryable),
-                    "AsQueryable",
+                    nameof(Queryable.AsQueryable),
                     new[] { elementType },
                     new[] { collectionType },
                     BindingFlags.Static);
@@ -460,14 +466,7 @@ namespace PropertyCopier
             if (!sourceProperty.PropertyType.IsCastableTo(targetProperty.PropertyType))
             {
                 throw new ArgumentException(
-                    string.Format(
-                        "Property {0} {1} {2} type cannot be mapped to: {3} {4} {5}",
-                        source.FullName,
-                        sourceProperty.PropertyType.Name,
-                        sourceProperty.Name,
-                        target.FullName,
-                        targetProperty.PropertyType.Name,
-                        targetProperty.Name));
+                    $"Property {source.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {target.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
             }
         }
 
@@ -541,6 +540,28 @@ namespace PropertyCopier
                 select new PropertyPair { TargetProperty = tProperty, SourceProperty = sProperty };
 
             return matches;
+        }
+
+        private static IEnumerable<DefinedMappingPropertyPair> GetKnownProperties(
+            IEnumerable<PropertyInfo> sourceProperties,
+            IEnumerable<PropertyInfo> targetProperties,
+            MappingData mappingData)
+        {
+            var matches = GetMatchedProperties(sourceProperties, targetProperties);
+
+            var knownMappings =
+                from match in matches
+                join mappingRule in mappingData.DefinedMappingRules
+                on new {Source = match.SourceProperty.PropertyType, Target = match.TargetProperty.PropertyType}
+                equals new {Source = mappingRule.SourceType, Target = mappingRule.TargetType}
+                select new DefinedMappingPropertyPair
+                {
+                    SourceProperty = match.SourceProperty,
+                    TargetProperty = match.TargetProperty,
+                    DefinedMapping = mappingRule,
+                };
+
+            return knownMappings;
         }
 
         private static MemberInfo GetMemberInfo(LambdaExpression propertyExpression)

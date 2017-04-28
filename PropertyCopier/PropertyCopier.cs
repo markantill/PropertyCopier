@@ -9,9 +9,8 @@ namespace PropertyCopier
 	/// </summary>
 	/// <typeparam name="TSource">The type of the source.</typeparam>
 	/// <typeparam name="TTarget">The type of the target.</typeparam>
-	internal static class PropertyCopier<TSource, TTarget>
-		where TSource : class
-		where TTarget : class, new()
+	internal static class PropertyCopier<TSource, TTarget>		
+		where TTarget : new()
 	{
 		// Stores the delegate required to create a new object.
 		// As this is compiled it is much faster than reflection.

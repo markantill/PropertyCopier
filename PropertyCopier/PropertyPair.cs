@@ -13,4 +13,9 @@ namespace PropertyCopier
             return $"{{ TargetProperty = {TargetProperty}, SourceProperty = {SourceProperty} }}";
         }
     }
+
+    internal class DefinedMappingPropertyPair : PropertyPair
+    {
+        public DefinedMapping DefinedMapping { get; set; }
+    }
 }

@@ -13,9 +13,8 @@ namespace PropertyCopier
         private readonly Dictionary<TypeMapping, MappingData> _mappings =
             new Dictionary<TypeMapping, MappingData>();
 
-        public TTarget Map<TSource, TTarget>(TSource source)
-            where TSource : class
-            where TTarget : class, new()
+        public TTarget Map<TSource, TTarget>(TSource source)            
+            where TTarget : new()
         {
             var mappingData = GetMappingData<TSource, TTarget>();
             var target = mappingData.InitializerMappingFunction.Value(source);
@@ -27,9 +26,8 @@ namespace PropertyCopier
             return target;
         }
 
-        public TTarget Map<TSource, TTarget>(TSource source, TTarget target)
-            where TSource : class
-            where TTarget : class, new()
+        public TTarget Map<TSource, TTarget>(TSource source, TTarget target)            
+            where TTarget : new()
         {
             var mappingData = GetMappingData<TSource, TTarget>();
             target = mappingData.CopyMappingFunction.Value(source, target);
@@ -41,51 +39,45 @@ namespace PropertyCopier
             return target;
         }
 
-        public Expression<Func<TSource, TTarget>> CopyExpression<TSource, TTarget>()
-            where TSource : class
-            where TTarget : class, new()
+        public Expression<Func<TSource, TTarget>> CopyExpression<TSource, TTarget>()            
+            where TTarget : new()
         {
             var mappingData = GetMappingData<TSource, TTarget>();
             return mappingData.InitializerMappingExpression.Value;
         }
 
-        public void SetMapping<TSource, TTarget>(bool scalarOnly)
-            where TSource : class
-            where TTarget : class, new()
+        public void SetMapping<TSource, TTarget>(bool scalarOnly)            
+            where TTarget : new()
         {
             var mappingData = GetOrCreateMappingData<TSource, TTarget>();
             mappingData.ScalarOnly = scalarOnly;
         }
 
-        public void IgnoreProperty<TSource, TTarget>(Expression<Func<TTarget, object>> propertyToIgnore)
-            where TSource : class
-            where TTarget : class, new()
+        public void IgnoreProperty<TSource, TTarget>(Expression<Func<TTarget, object>> propertyToIgnore)            
+            where TTarget : new()
         {
             var mappingData = GetOrCreateMappingData<TSource, TTarget>();
             mappingData.PropertyIgnoreExpressions.Add(propertyToIgnore);
         }
 
-        public void AfterCopy<TSource, TTarget>(Action<TSource, TTarget> afterCopyFunction)
-            where TSource : class
-            where TTarget : class, new()
+        public void AfterCopy<TSource, TTarget>(Action<TSource, TTarget> afterCopyFunction)            
+            where TTarget : new()
         {
             var mappingData = GetOrCreateMappingData<TSource, TTarget>();
             mappingData.AfterMappingActions.Add(afterCopyFunction);
         }
 
         public void ForProperty<TSource, TTarget, TProperty>(Expression<Func<TTarget, TProperty>> targetProperty,
-            Expression<Func<TSource, TProperty>> mappingfunction) 
-            where TSource : class 
-            where TTarget : class, new()
+            Expression<Func<TSource, TProperty>> mappingfunction)             
+            where TTarget : new()
         {
             var mappingData = GetOrCreateMappingData<TSource, TTarget>();
             mappingData.PropertyExpressions.Add(
                 new PropertyRule { PropertyExpression = targetProperty, MappingRule = mappingfunction });
         }
 
-        private MappingData<TSource, TTarget> GetMappingData<TSource, TTarget>()
-            where TSource : class
-            where TTarget : class, new()
+        private MappingData<TSource, TTarget> GetMappingData<TSource, TTarget>()            
+            where TTarget : new()
         {
             MappingData existingMappingData;
             _mappings.TryGetValue(new TypeMapping(typeof(TSource), typeof(TTarget)), out existingMappingData);
@@ -99,9 +91,8 @@ namespace PropertyCopier
                    };
         }
 
-        private MappingData<TSource, TTarget> GetOrCreateMappingData<TSource, TTarget>()
-            where TSource : class
-            where TTarget : class, new()
+        private MappingData<TSource, TTarget> GetOrCreateMappingData<TSource, TTarget>()            
+            where TTarget : new()
         {
             MappingData existingMappingData;
             var typeMapping = new TypeMapping(typeof(TSource), typeof(TTarget));

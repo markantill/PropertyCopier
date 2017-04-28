@@ -6,8 +6,7 @@ namespace PropertyCopier
     /// Helper class for copying properties.
     /// </summary>
     /// <typeparam name="TSource">The type of the source.</typeparam>
-    public class CopyFrom<TSource>
-        where TSource : class
+    public class CopyFrom<TSource>        
     {
         #region Constructors and Destructors
 
@@ -41,7 +40,7 @@ namespace PropertyCopier
         /// <typeparam name="TTarget">The type of the target.</typeparam>
         /// <returns>New instance of target type with property values copied from source.</returns>
         public TTarget ToNew<TTarget>()
-            where TTarget : class, new()
+            where TTarget : new()
         {
             var result = _scalarOnly
                 ? ScalarPropertyCopier<TSource, TTarget>.CopyFrom(_source)
@@ -69,7 +68,7 @@ namespace PropertyCopier
         /// <param name="target">The target.</param>
         /// <returns>Existing object with properties copied in.</returns>
         public TTarget ToExisting<TTarget>(TTarget target)
-            where TTarget : class, new()
+            where TTarget : new()
         {
             if (target == null) throw new ArgumentNullException("target");
 

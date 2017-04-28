@@ -24,6 +24,8 @@ namespace PropertyCopier
 
         public ICollection<Action<TSource, TTarget>> AfterMappingActions { get; } = new List<Action<TSource, TTarget>>();
 
+        public ICollection<DefinedMapping> DefinedMappings { get; set; }
+
         public Lazy<Expression<Func<TSource, TTarget>>> InitializerMappingExpression { get; set; } 
 
         public Lazy<Func<TSource, TTarget>> InitializerMappingFunction { get; set; }
@@ -33,6 +35,8 @@ namespace PropertyCopier
         public override IEnumerable<LambdaExpression> PropertyIgnoreLambdaExpressions => PropertyIgnoreExpressions;
 
         public override IEnumerable<PropertyRule> PropertyLambdaExpressions => PropertyExpressions;
+
+        public override IEnumerable<DefinedMapping> DefinedMappingRules => DefinedMappings;
     }
 
     internal abstract class MappingData
@@ -42,6 +46,8 @@ namespace PropertyCopier
         public abstract IEnumerable<LambdaExpression> PropertyIgnoreLambdaExpressions { get; }
 
         public abstract IEnumerable<PropertyRule> PropertyLambdaExpressions { get; }
+
+        public abstract IEnumerable<DefinedMapping> DefinedMappingRules { get; }
     }
 
     internal class PropertyRule
@@ -49,5 +55,14 @@ namespace PropertyCopier
         public LambdaExpression PropertyExpression { get; set; }
 
         public LambdaExpression MappingRule { get; set; }
+    }
+
+    internal class DefinedMapping
+    {
+        public Type SourceType { get; set; }
+
+        public Type TargetType { get; set; }
+
+        public Expression<Func<LambdaExpression>> Mapping { get; set; }
     }
 }
