@@ -16,9 +16,11 @@ namespace PropertyCopier
 		// As this is compiled it is much faster than reflection.
 		#region Static Fields
 
-		private static readonly Lazy<Func<TSource, TTarget>> Copier =
-			new Lazy<Func<TSource, TTarget>>(
-				() => ExpressionBuilder.CreateLambdaInitializer<TSource, TTarget>(true).Compile(), true);
+	    private static readonly Lazy<Func<TSource, TTarget>> Copier = new Lazy<Func<TSource, TTarget>>(
+	        () => ExpressionBuilder
+	            .CreateLambdaInitializer<TSource, TTarget>(new MappingData<TSource, TTarget> { ScalarOnly = true })
+	            .Compile(),
+	        true);
 
 		#endregion
 

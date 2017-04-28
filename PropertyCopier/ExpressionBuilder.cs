@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Mono.Linq.Expressions;
 
 namespace PropertyCopier
-{
+{    
     /// <summary>
     ///     Class for creating expression trees.
     /// </summary>
@@ -16,37 +15,37 @@ namespace PropertyCopier
         #region Public Methods and Operators
 
         /// <summary>
-        ///     Creates the lambda initializer to create new object and select properties based on properties of source
-        ///     type where the property names match.
+        /// Creates the lambda initializer to create new object and select properties based on properties of source
+        /// type where the property names match.
         /// </summary>
         /// <typeparam name="TSource">The type of the source.</typeparam>
         /// <typeparam name="TTarget">The type of the target.</typeparam>
-        /// <param name="scalarOnly">if set to <c>true</c> copy scalar properties only.</param>
+        /// <param name="mappingData">Optional mapping data to be applied.</param>
         /// <returns>Lambda expression to initialise object.</returns>
-        internal static Expression<Func<TSource, TTarget>> CreateLambdaInitializer<TSource, TTarget>(
-            bool scalarOnly = false)
+        internal static Expression<Func<TSource, TTarget>> CreateLambdaInitializer<TSource, TTarget>(            
+            MappingData<TSource, TTarget> mappingData)
         {
-            // Were going to build an expression that looks like:
-            // source => new Foo { Property1 = bar.Property1, Property2 = bar.Property2 }
-            var sourceParameter = Expression.Parameter(typeof(TSource), "source");
-
-            var initializer = CreateLambdaInitializerBody(typeof(TSource), typeof(TTarget), scalarOnly, sourceParameter);
-
-            // Create a Lambda expression from the parameter and body we have already created.
-            var copyExpression = Expression.Lambda<Func<TSource, TTarget>>(initializer, sourceParameter);
-            return copyExpression;
+            return (Expression<Func<TSource, TTarget>>)CreateLambdaInitializer(typeof(TSource), typeof(TTarget), mappingData);
         }
 
+        /// <summary>
+        /// Creates the lambda initializer to create new object and select properties based on properties of source
+        /// type where the property names match.
+        /// </summary>
+        /// <param name="source">The type of the source.</param>
+        /// <param name="target">The type of the target.</param>
+        /// <param name="mappingData">The mapping data.</param>
+        /// <returns>Lambda expression to initialise object.</returns>
         internal static LambdaExpression CreateLambdaInitializer(
             Type source,
             Type target,
-            bool scalarOnly = false)
+            MappingData mappingData)
         {
             // Were going to build an expression that looks like:
             // source => new Foo { Property1 = bar.Property1, Property2 = bar.Property2 }
-            var sourceParameter = Expression.Parameter(source, "source");
+            var sourceParameter = Expression.Parameter(source, nameof(source));
 
-            var initializer = CreateLambdaInitializerBody(source, target, scalarOnly, sourceParameter);
+            var initializer = CreateLambdaInitializerBody(source, target, sourceParameter, mappingData);
 
             // Create a Lambda expression from the parameter and body we have already created.
             var copyExpression = Expression.Lambda(initializer, sourceParameter);
@@ -54,42 +53,80 @@ namespace PropertyCopier
         }
 
         /// <summary>
-        ///     Creates the lambda property copier.
+        /// Creates the lambda property copier expression.
         /// </summary>
         /// <typeparam name="TSource">The type of the source.</typeparam>
-        /// <typeparam name="TTarget">The type of the target.</typeparam>
-        /// <param name="scalarOnly">if set to <c>true</c> [scalar only].</param>
+        /// <typeparam name="TTarget">The type of the target.</typeparam>      
+        /// <param name="mappingData">The mapping data.</param> 
         /// <returns>Expression to copy properties with same name and type.</returns>
-        internal static Expression<Func<TSource, TTarget, TTarget>> CreateLambdaPropertyCopier<TSource, TTarget>(
-            bool scalarOnly = false)
+        internal static Expression<Func<TSource, TTarget, TTarget>> CreateLambdaPropertyCopier<TSource, TTarget>(            
+            MappingData<TSource, TTarget> mappingData)
         {
-            var sourceParameter = typeof(TSource).Parameter("source");
-            var targetParameter = typeof(TTarget).Parameter("target");
-            var sourceProperties = GetSourceProperties(typeof(TSource), scalarOnly);
+            var sourceParameter = Expression.Parameter(typeof(TSource), "source");
+            var targetParameter = Expression.Parameter(typeof(TTarget), "target");
+            var sourceProperties = GetSourceProperties(typeof(TSource), mappingData.ScalarOnly);
+            var targetProperties = typeof(TTarget).GetProperties();
+
+            var alreadyMatched = mappingData.PropertyIgnoreLambdaExpressions == null
+                ? new HashSet<PropertyInfo>()
+                : new HashSet<PropertyInfo>(mappingData.PropertyIgnoreLambdaExpressions.Select(GetMemberInfo).OfType<PropertyInfo>());
+
+            targetProperties = targetProperties.Except(alreadyMatched, new PropertyInfoComparer()).ToArray();
 
             // Copying properties is going to require building a statement (multi-line) lambda, 
             // each entry in the list will be one line of "code" in the statement.
             var exps = new List<Expression>();
 
-            var matches = GetMatchedProperties(sourceProperties, typeof(TTarget).GetProperties());
+            foreach (var propertyRule in mappingData.PropertyLambdaExpressions)
+            {
+                var predefined = GetPredefinedRule(propertyRule, sourceParameter);
+                alreadyMatched.Add(predefined.Property);
+                exps.Add(predefined.Expression);
+            }
+
+            targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+
+            var matches = GetMatchedProperties(sourceProperties, targetProperties);
             foreach (var match in matches)
             {
                 var sourceExp = CreateSourceExpression<TSource, TTarget>(
                     match.TargetProperty,
                     match.SourceProperty,
                     sourceParameter);
+
                 // Expressions will not do boxing or implicit conversions, so make sure the
-                // type is explicitly cast to the destination type.
+                // type is explicitly cast to the destination type if not the same.                
                 var targetExp = Expression.Property(targetParameter, match.TargetProperty);
-                var setExp = targetExp.Assign(sourceExp);
+                var setExp = Expression.Assign(targetExp, sourceExp);
                 exps.Add(setExp);
+                alreadyMatched.Add(match.TargetProperty);
             }
+
+            targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+
+            var joinedNames = GetFlattenedProperties(sourceProperties, targetProperties);
+
+            foreach (var joinedName in joinedNames)
+            {
+                var sourceExp = CreateNestedPropertyExpression(
+                    Expression.Property(sourceParameter, joinedName.SourceProperty),                    
+                    joinedName.ChildProperty.Name,
+                    joinedName.TargetProperty.PropertyType);
+
+                // Expressions will not do boxing or implicit conversions, so make sure the
+                // type is explicitly cast to the destination type if not the same.                
+                var targetExp = Expression.Property(targetParameter, joinedName.TargetProperty);
+                var setExp = Expression.Assign(targetExp, sourceExp);
+                exps.Add(setExp);
+                alreadyMatched.Add(joinedName.TargetProperty);
+            }
+
 
             // Finally we want to return the result, there is no Return expression instead
             // just make the last line of the method body what you want to return.
             exps.Add(targetParameter);
 
-            Expression block = exps.Block();
+            Expression block = Expression.Block(exps);
             var exp = Expression.Lambda<Func<TSource, TTarget, TTarget>>(
                 block,
                 sourceParameter,
@@ -97,41 +134,48 @@ namespace PropertyCopier
             return exp;
         }
 
+        private static PropertyRuleResult GetPredefinedRule(PropertyRule propertyLambdaExpression, ParameterExpression sourcExpression)
+        {
+            var targetProperty = (PropertyInfo)GetMemberInfo(propertyLambdaExpression.PropertyExpression);
+            var visitor = new AddPropertyRuleExpressionVisitor(sourcExpression);
+            var newExpression = (LambdaExpression)visitor.Visit(propertyLambdaExpression.MappingRule);
+            return new PropertyRuleResult
+            {
+                Property = targetProperty,
+                Expression = newExpression.Body,
+            };
+        }
+
         /// <summary>
-        ///     Creates the expression for nested properties in the string.
+        /// Creates the expression for nested properties in the string.
         /// </summary>
         /// <param name="startingExpression">The staring expression, for example the inital parameter.</param>
         /// <param name="propertyName">Name of the nested property e.g. "MyObject.MyProperty".</param>
         /// <param name="finalType">The final type to cast to.</param>
         /// <returns>Nested expressions with cast.</returns>
-        /// <remarks>
-        ///     Uses multiple return statements so that the last statement is the recursive call.
-        ///     This means the compiler can optimise the recursion to tail recursion.
-        /// </remarks>
-        internal static Expression CreateNestedPropertyExpression(
-            Expression startingExpression,
-            string propertyName,
-            Type finalType = null)
+        internal static Expression CreateNestedPropertyExpression(Expression startingExpression, string propertyName, Type finalType = null)
         {
-            var split = propertyName.Split('.');
-            var nextPropertyName = split.First();
-            startingExpression = Expression.PropertyOrField(startingExpression, nextPropertyName);
-            if (split.Length == 1)
+            while (true)
             {
-                if (finalType != null)
+                var split = propertyName.Split('.');
+                var nextPropertyName = split.First();
+                startingExpression = Expression.PropertyOrField(startingExpression, nextPropertyName);
+                if (split.Length == 1)
                 {
-                    startingExpression = startingExpression.Convert(finalType);
+                    if (finalType != null)
+                    {
+                        startingExpression = Expression.Convert(startingExpression, finalType);
+                    }
+
+                    return startingExpression;
                 }
 
-                return startingExpression;
+                propertyName = string.Join(".", split.Skip(1));
             }
-
-            propertyName = string.Join(".", split.Skip(1));
-            return CreateNestedPropertyExpression(startingExpression, propertyName, finalType);
         }
 
         /// <summary>
-        ///     Calls the specified enumerable method that takes a collection and an expression. e.g. Select etc.
+        /// Calls the specified <see cref="Enumerable"/> method that takes a collection and an expression. e.g. Select etc.
         /// </summary>
         /// <param name="collection">The expression representing the collection.</param>
         /// <param name="predicate">The expression that will be run.</param>
@@ -177,102 +221,129 @@ namespace PropertyCopier
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="target">The target.</param>
-        /// <param name="scalarOnly">if set to <c>true</c> scalar properties only are copied.</param>
         /// <param name="sourceParameter">The source parameter.</param>
+        /// <param name="mappingData">The mapping data.</param>
         /// <returns>Expression for lambda body.</returns>
         private static Expression CreateLambdaInitializerBody(
             Type source,
-            Type target,
-            bool scalarOnly,
-            Expression sourceParameter)
+            Type target,            
+            Expression sourceParameter,
+            MappingData mappingData)
         {
             // MemberBindings are going to be values inside the braces of the expression e.g. Property1 = source.Property1
             var bindings = new List<MemberBinding>();
-            var sourceProperties = GetSourceProperties(source, scalarOnly).ToList();
+            var sourceProperties = GetSourceProperties(source, mappingData.ScalarOnly).ToList();
             var targetProperties = target.GetProperties();
-            var alreadyMatched = new HashSet<PropertyInfo>();
+            var alreadyMatched = mappingData.PropertyIgnoreLambdaExpressions == null
+                ? new HashSet<PropertyInfo>() 
+                : new HashSet<PropertyInfo>(mappingData.PropertyIgnoreLambdaExpressions.Select(GetMemberInfo).OfType<PropertyInfo>());
+
+            targetProperties = targetProperties.Except(alreadyMatched, new PropertyInfoComparer()).ToArray();
+
+            // Apply any specific rules.
+            var parmeterExpression = sourceParameter as ParameterExpression;
+
+            if (parmeterExpression != null)
+            {
+                foreach (var propertyRule in mappingData.PropertyLambdaExpressions)
+                {
+                    var predefined = GetPredefinedRule(propertyRule, parmeterExpression);
+                    alreadyMatched.Add(predefined.Property);
+                    bindings.Add(Expression.Bind(predefined.Property, predefined.Expression));
+                }
+
+                targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+            }
+            
 
             // normal matches e.g. Foo.ID = Bar.ID
             var matches = GetMatchedProperties(sourceProperties, targetProperties);
 
-            foreach (var match in matches)
+            foreach (var propertyMatch in matches)
             {
-                if (match.TargetProperty.PropertyType.IsValueType || match.TargetProperty.PropertyType == typeof(string))
+                if (propertyMatch.TargetProperty.PropertyType.IsValueType || propertyMatch.TargetProperty.PropertyType == typeof(string))
                 {
                     var sourceExp = CreateSourceExpression(
                         source,
                         target,
-                        match.TargetProperty,
-                        match.SourceProperty,
+                        propertyMatch.TargetProperty,
+                        propertyMatch.SourceProperty,
                         sourceParameter);
-                    bindings.Add(Expression.Bind(match.TargetProperty, sourceExp));
-                    alreadyMatched.Add(match.TargetProperty);
+                    bindings.Add(Expression.Bind(propertyMatch.TargetProperty, sourceExp));
+                    alreadyMatched.Add(propertyMatch.TargetProperty);
                 }
             }
 
             targetProperties = targetProperties.Except(alreadyMatched).ToArray();
 
             // nested scalar matches e.g. Foo.OwnerID = Bar.Owner.ID
-            var joinedNames =
-                from sProperty in sourceProperties
-                from cProperty in sProperty.PropertyType.GetProperties()
-                join tProperty in targetProperties
-                    on sProperty.Name.ToUpperInvariant() + cProperty.Name.ToUpperInvariant()
-                    equals tProperty.Name.ToUpperInvariant()
-                where cProperty.PropertyType.IsCastableTo(tProperty.PropertyType)
-                where sProperty.CanRead
-                where cProperty.CanWrite
-                select new { TargetProperty = tProperty, ChildProperty = cProperty, SourceProperty = sProperty };
+            var flattenedProperties = GetFlattenedProperties(sourceProperties, targetProperties);
 
-            foreach (var joinedName in joinedNames)
+            foreach (var propertyMatch in flattenedProperties)
             {
                 var sourceEx = CreateNestedPropertyExpression(
-                    sourceParameter.Property(joinedName.SourceProperty),
-                    joinedName.ChildProperty.Name,
-                    joinedName.TargetProperty.PropertyType);
-                bindings.Add(Expression.Bind(joinedName.TargetProperty, sourceEx));
-                alreadyMatched.Add(joinedName.TargetProperty);
+                    Expression.Property(sourceParameter, propertyMatch.SourceProperty),                    
+                    propertyMatch.ChildProperty.Name,
+                    propertyMatch.TargetProperty.PropertyType);
+                bindings.Add(Expression.Bind(propertyMatch.TargetProperty, sourceEx));
+                alreadyMatched.Add(propertyMatch.TargetProperty);
             }
 
             targetProperties = targetProperties.Except(alreadyMatched).ToArray();
 
             // Nested Child objects e.g. Foo.Owner = new OwnerDto { ID = bar.Owner.ID, Name = bar.Owner.Name }
-            var joinedObjects =
-                from sProperty in sourceProperties
-                join tProperty in targetProperties
-                    on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
-                where sProperty.PropertyType != typeof(string)
-                where tProperty.PropertyType != typeof(string)
-                where !sProperty.PropertyType.IsValueType
-                where !tProperty.PropertyType.IsValueType
-                where sProperty.CanRead
-                where tProperty.CanWrite
-                where tProperty.PropertyType.GetConstructor(Type.EmptyTypes) != null
-                select new { TargetProperty = tProperty, SourceProperty = sProperty };
+            // TODO: see if we already have a mapping for the child and use it if we do.
+            var nestedProperties = GetNestedPropertyMatches(sourceProperties, targetProperties);
 
-            foreach (var joinedObject in joinedObjects)
+            foreach (var propertyMatch in nestedProperties)
             {
                 var propExpression = CreateNestedPropertyExpression(
                     sourceParameter,
-                    joinedObject.SourceProperty.Name);
+                    propertyMatch.SourceProperty.Name);
 
                 var exp = CreateLambdaInitializerBody(
-                    joinedObject.SourceProperty.PropertyType,
-                    joinedObject.TargetProperty.PropertyType,
-                    scalarOnly,
-                    propExpression
-                    );
-                bindings.Add(Expression.Bind(joinedObject.TargetProperty, exp));
-                alreadyMatched.Add(joinedObject.TargetProperty);
+                    propertyMatch.SourceProperty.PropertyType,
+                    propertyMatch.TargetProperty.PropertyType,                    
+                    propExpression,
+                    mappingData);
+
+                bindings.Add(Expression.Bind(propertyMatch.TargetProperty, exp));
+                alreadyMatched.Add(propertyMatch.TargetProperty);
             }
 
             targetProperties = targetProperties.Except(alreadyMatched).ToArray();
 
             // Child enumerations e.g. Foo.Children = Bar.Children.Select(barchild => new ChildDto { ID = barchild.ID }
+            var enumerations = GetChidEnumerations(sourceProperties, targetProperties);
+
+            bindings.AddRange(
+                from enumeration in enumerations
+                    let propExpression =
+                        CreateNestedPropertyExpression(sourceParameter, enumeration.SourceProperty.Name)
+                    let enumerableSourceItemType = enumeration.SourceProperty.PropertyType.GetGenericArguments().First()
+                    let enumerableTargetItemType = enumeration.TargetProperty.PropertyType.GetGenericArguments().First()
+                    let childInitializser =
+                        CreateLambdaInitializer(enumerableSourceItemType, enumerableTargetItemType, mappingData)
+                    let selectCall = CallEnumerableMethod(propExpression, childInitializser, "Select")
+                    select Expression.Bind(enumeration.TargetProperty, selectCall));
+
+            // Create Expression for initialising object with correct values, the new MyClass part of the expression.            
+            var initializer = Expression.MemberInit(Expression.New(target), bindings);
+            return initializer;
+        }
+
+        /// <summary>
+        /// Get enumerations we can map where the names match and they are both IEnumerable{T} for 
+        /// </summary>
+        /// <param name="sourceProperties">The source properties.</param>
+        /// <param name="targetProperties">The target properties.</param>
+        /// <returns></returns>
+        private static IEnumerable<PropertyPair> GetChidEnumerations(ICollection<PropertyInfo> sourceProperties, ICollection<PropertyInfo> targetProperties)
+        {
             var enumerations =
                 from sProperty in sourceProperties
                 join tProperty in targetProperties
-                    on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
+                on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
                 where sProperty.PropertyType != typeof(string)
                 where tProperty.PropertyType != typeof(string)
                 where !sProperty.PropertyType.IsValueType
@@ -281,22 +352,59 @@ namespace PropertyCopier
                 where tProperty.CanWrite
                 where typeof(IEnumerable).IsAssignableFrom(sProperty.PropertyType)
                 where tProperty.PropertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
-                select new { TargetProperty = tProperty, SourceProperty = sProperty };
+                select new PropertyPair {TargetProperty = tProperty, SourceProperty = sProperty};
+            return enumerations;
+        }
 
-            bindings.AddRange(
-                (from enumeration in enumerations
-                    let propExpression =
-                        CreateNestedPropertyExpression(sourceParameter, enumeration.SourceProperty.Name)
-                    let enumerableSourceItemType = enumeration.SourceProperty.PropertyType.GetGenericArguments().First()
-                    let enumerableTargetItemType = enumeration.TargetProperty.PropertyType.GetGenericArguments().First()
-                    let childInitializser =
-                        CreateLambdaInitializer(enumerableSourceItemType, enumerableTargetItemType, scalarOnly)
-                    let selectCall = CallEnumerableMethod(propExpression, childInitializser, "Select")
-                    select Expression.Bind(enumeration.TargetProperty, selectCall)));
+        /// <summary>
+        /// Get the properties that match at the child level
+        /// e.g. Target.Child.Id = Source.Child.Id
+        /// Note this only goes down one level.
+        /// </summary>
+        /// <param name="sourceProperties">The source properties.</param>
+        /// <param name="targetProperties">The target properties.</param>
+        /// <returns></returns>
+        private static IEnumerable<PropertyPair> GetNestedPropertyMatches(List<PropertyInfo> sourceProperties, PropertyInfo[] targetProperties)
+        {
+            var joinedObjects =
+                from sProperty in sourceProperties
+                join tProperty in targetProperties
+                on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
+                where sProperty.PropertyType != typeof(string)
+                where tProperty.PropertyType != typeof(string)
+                where !sProperty.PropertyType.IsValueType
+                where !tProperty.PropertyType.IsValueType
+                where sProperty.CanRead
+                where tProperty.CanWrite
+                where tProperty.PropertyType.GetConstructor(Type.EmptyTypes) != null
+                select new PropertyPair {TargetProperty = tProperty, SourceProperty = sProperty};
+            return joinedObjects;
+        }
 
-            // Create Expression for initialising object with correct values, the new MyClass part of the expression.            
-            var initializer = target.New().MemberInit(bindings);
-            return initializer;
+        /// <summary>
+        /// Get the properties of the source we can flatten out in the target
+        /// e.g. Target.ChildId = Source.Child.Id
+        /// </summary>
+        /// <param name="sourceProperties">The source properties</param>
+        /// <param name="targetProperties">The target properties.</param>
+        /// <returns></returns>
+        private static IEnumerable<PropertyPairChild> GetFlattenedProperties(
+            IEnumerable<PropertyInfo> sourceProperties,
+            IEnumerable<PropertyInfo> targetProperties)
+        {
+            var joinedNames =
+                from sProperty in sourceProperties
+                from cProperty in sProperty.PropertyType.GetProperties()
+                join tProperty in targetProperties
+                on sProperty.Name.ToUpperInvariant() + cProperty.Name.ToUpperInvariant()
+                equals tProperty.Name.ToUpperInvariant()
+                where cProperty.PropertyType.IsCastableTo(tProperty.PropertyType)
+                where sProperty.CanRead
+                where cProperty.CanWrite
+                select
+                new PropertyPairChild {TargetProperty = tProperty, ChildProperty = cProperty, SourceProperty = sProperty};
+
+            return joinedNames;
         }
 
         private static Expression GenerateMethodCallExpression(
@@ -324,7 +432,7 @@ namespace PropertyCopier
             // Apply the AsQueryable method. We need to do this so we have a method that we can
             // pass an expression into that we can build up. If it stays as as IEnumerable we would need to 
             // pass in a delgate not an expression and that wouldn't work if were working with Linq to Entites or similar.
-            var collectionAsQueryable = asQueryableMethod.Call(collectionExpression);
+            var collectionAsQueryable = Expression.Call(asQueryableMethod, collectionExpression);
 
             // Figure out they type now it is an IQueryable<T>.
             var queryableType = typeof(IQueryable<>).MakeGenericType(elementType);
@@ -338,7 +446,8 @@ namespace PropertyCopier
                 BindingFlags.Static);
 
             // Actually call the method.
-            return method.Call(collectionAsQueryable, Expression.Constant(delegateExpression));
+            var call = Expression.Call(method, collectionAsQueryable, Expression.Constant(delegateExpression));
+            return call;
         }
 
         private static void CheckTypesAreCompatable(
@@ -370,7 +479,7 @@ namespace PropertyCopier
         /// <returns>
         /// The scalar properties.
         /// </returns>
-        private static IEnumerable<PropertyInfo> GetSourceProperties(Type source, bool scalarOnly)
+        private static ICollection<PropertyInfo> GetSourceProperties(Type source, bool scalarOnly)
         {
             var sourceProperties = source.GetProperties()
                 .Where(p => p != null)
@@ -381,7 +490,7 @@ namespace PropertyCopier
                     sourceProperties.Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string));
             }
 
-            return sourceProperties;
+            return sourceProperties.ToList();
         }
 
         private static Expression CreateSourceExpression<TSource, TTarget>(
@@ -404,14 +513,21 @@ namespace PropertyCopier
             PropertyInfo sourceProperty,
             Expression sourceParameter)
         {
+            if (targetProperty.PropertyType == sourceProperty.PropertyType)
+            {
+                return Expression.Property(sourceParameter, sourceProperty);
+            }
+
             CheckTypesAreCompatable(source, target, targetProperty, sourceProperty);
-            Expression sourceExp = Expression.Property(sourceParameter, sourceProperty)
-                .Convert(targetProperty.PropertyType);
+            Expression sourceExp = 
+                Expression.Convert(
+                    Expression.Property(sourceParameter, sourceProperty),
+                    targetProperty.PropertyType);
 
             return sourceExp;
         }
 
-        private static IEnumerable<TypePair> GetMatchedProperties(
+        private static IEnumerable<PropertyPair> GetMatchedProperties(
             IEnumerable<PropertyInfo> sourceProperties,
             IEnumerable<PropertyInfo> targetProperties)
         {
@@ -422,17 +538,36 @@ namespace PropertyCopier
                     on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
                 where tProperty.CanWrite
                 where sProperty.PropertyType.IsCastableTo(tProperty.PropertyType)
-                select new TypePair { TargetProperty = tProperty, SourceProperty = sProperty };
+                select new PropertyPair { TargetProperty = tProperty, SourceProperty = sProperty };
 
             return matches;
         }
 
-        internal class TypePair
-        {
-            internal PropertyInfo TargetProperty { get; set; }
-            internal PropertyInfo SourceProperty { get; set; }
-        }
+        private static MemberInfo GetMemberInfo(LambdaExpression propertyExpression)
+        {            
+            var body = propertyExpression.Body as MemberExpression;            
+            if (body == null)
+            {
+                var ubody = propertyExpression.Body as UnaryExpression;
+                body = ubody?.Operand as MemberExpression;
+            }
 
+            if (body == null)
+            {
+                throw new ArgumentException(
+                    $"{nameof(propertyExpression)} must be a member expression. Expression {propertyExpression}",
+                    nameof(propertyExpression));
+            }
+
+            return body.Member;
+        }
         #endregion
+
+        internal class PropertyRuleResult
+        {
+            public PropertyInfo Property { get; set; }
+
+            public Expression Expression { get; set; }
+        }
     }
 }

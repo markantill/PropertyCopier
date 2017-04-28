@@ -8,27 +8,39 @@ namespace PropertyCopier.Tests
     [TestFixture]
     public class CopyTests
     {
-        //TODO: tests for updates
         //TODO: tests with multiple mappings e.g. Foo.BarID and Foo.Bar.ID test only sets prop once
         //TODO: tests for existing objects        
 
         [Test]
         public void CopyNumber()
         {
-            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10 }).ToNew<DtoOne>();
+            var dto = Copy.PropertiesFrom(new EntityOne() { ID = 10 }).ToNew<DtoOne>();
             Assert.AreEqual(10, dto.ID);
         }
 
         [Test]
         public void CopyNumberAndString()
         {
-            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10, Name = "Test" }).ToNew<DtoOne>();
+            var dto = Copy.PropertiesFrom(new EntityOne() { ID = 10, Name = "Test" }).ToNew<DtoOne>();
             Assert.AreEqual(10, dto.ID);
             Assert.AreEqual("Test", dto.Name);
         }
 
         [Test]
         public void CopyNumberAndStringAndChildProperties()
+        {
+            var dto =
+                Copy.PropertiesFrom(
+                    new EnitiyTwo() { ID = 10, Name = "Test", Child = new ChildEntityOne() { ID = 100, Name = "Child" } })
+                    .ToNew<DtoTwo>();
+            Assert.AreEqual(10, dto.ID);
+            Assert.AreEqual("Test", dto.Name);
+            Assert.AreEqual(100, dto.ChildID);
+            Assert.AreEqual("Child", dto.ChildName);
+        }
+
+        [Test]
+        public void CopyFlattenedProperty()
         {
             var dto =
                 Copy.PropertiesFrom(
@@ -79,14 +91,14 @@ namespace PropertyCopier.Tests
         [Test]
         public void CopyNumberToExisting()
         {
-            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10 }).ToExisting(new DtoOne() { ID = 0 });
+            var dto = Copy.PropertiesFrom(new EntityOne() { ID = 10 }).ToExisting(new DtoOne() { ID = 0 });
             Assert.AreEqual(10, dto.ID);
         }
 
         [Test]
         public void CopyNumberAndStringToExisting()
         {
-            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10, Name = "Test" }).ToExisting(new DtoOne { ID = 0, Name = "" });
+            var dto = Copy.PropertiesFrom(new EntityOne() { ID = 10, Name = "Test" }).ToExisting(new DtoOne { ID = 0, Name = "" });
             Assert.AreEqual(10, dto.ID);
             Assert.AreEqual("Test", dto.Name);
         }
@@ -94,16 +106,29 @@ namespace PropertyCopier.Tests
         [Test]
         public void CopyNumberToExistingOtherFieldsUnchanged()
         {
-            var dto = Copy.PropertiesFrom(new EnitiyOne() { ID = 10 }).ToExisting(new DtoTwo() { ID = 0, ChildName = "Child"});
+            var dto = Copy.PropertiesFrom(new EntityOne() { ID = 10 }).ToExisting(new DtoTwo() { ID = 0, ChildName = "Child"});
             Assert.AreEqual(10, dto.ID);
+            Assert.AreEqual("Child", dto.ChildName);
+        }
+
+        [Test]
+        public void CopyFlattenedPropertyToExisting()
+        {
+            var dto = new DtoTwo();
+            dto = Copy.PropertiesFrom(
+                    new EnitiyTwo() { ID = 10, Name = "Test", Child = new ChildEntityOne() { ID = 100, Name = "Child" } })
+                    .ToExisting(dto);
+            Assert.AreEqual(10, dto.ID);
+            Assert.AreEqual("Test", dto.Name);
+            Assert.AreEqual(100, dto.ChildID);
             Assert.AreEqual("Child", dto.ChildName);
         }
 
         [Test]
         public void CopyExpressions()
         {
-            var query = Builder<EnitiyOne>.CreateListOfSize(5).Build().AsQueryable();
-            var result = query.Select(Copy.Expression<EnitiyOne, DtoOne>());
+            var query = Builder<EntityOne>.CreateListOfSize(5).Build().AsQueryable();
+            var result = query.Select(Copy.Expression<EntityOne, DtoOne>());
             Assert.AreEqual(5, result.OfType<DtoOne>().Count());
             Assert.AreEqual(1, result.ElementAt(0).ID);
             Assert.AreEqual("Name1", result.ElementAt(0).Name);
@@ -114,8 +139,8 @@ namespace PropertyCopier.Tests
         [Test]
         public void CopyQueryable()
         {
-            var query = Builder<EnitiyOne>.CreateListOfSize(5).Build().AsQueryable();
-            var result = query.CopyEachTo<EnitiyOne, DtoOne>();
+            var query = Builder<EntityOne>.CreateListOfSize(5).Build().AsQueryable();
+            var result = query.CopyEachTo<EntityOne, DtoOne>();
             Assert.AreEqual(5, result.OfType<DtoOne>().Count());
             Assert.AreEqual(1, result.ElementAt(0).ID);
             Assert.AreEqual("Name1", result.ElementAt(0).Name);
@@ -126,7 +151,7 @@ namespace PropertyCopier.Tests
         [Test]
         public void CopyEnumeration()
         {
-            var enumeration = Builder<EnitiyOne>.CreateListOfSize(5).Build();
+            var enumeration = Builder<EntityOne>.CreateListOfSize(5).Build();
             var result = Copy.EnumerationFrom(enumeration).ToNew<DtoOne>().ToList();
             Assert.AreEqual(5, result.OfType<DtoOne>().Count());
             Assert.AreEqual(1, result.ElementAt(0).ID);
@@ -138,7 +163,7 @@ namespace PropertyCopier.Tests
 
     #region classes for tests
 
-    public class EnitiyOne
+    public class EntityOne
     {
         public byte ID { get; set; }
 

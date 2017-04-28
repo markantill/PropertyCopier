@@ -63,7 +63,7 @@ namespace PropertyCopier
         }
 
         /// <summary>
-        /// To the existing.
+        /// Target the existing.
         /// </summary>
         /// <typeparam name="TTarget">The type of the target.</typeparam>
         /// <param name="target">The target.</param>

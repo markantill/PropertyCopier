@@ -53,10 +53,6 @@
     <AssemblyOriginatorKeyFile>PropertyCopier.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Linq.Expressions, Version=1.2.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Linq.Expressions.1.2.0.0\lib\Mono.Linq.Expressions.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -71,14 +67,22 @@
     <Compile Include="CopyFromEnumeration.cs" />
     <Compile Include="ExistingCopier.cs" />
     <Compile Include="ExpressionBuilder.cs" />
+    <Compile Include="Mapper.cs" />
+    <Compile Include="MappingData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyCopier.cs" />
+    <Compile Include="PropertyInfoComparer.cs" />
     <Compile Include="ScalarPropertyCopier.cs" />
     <Compile Include="TypeHelper.cs" />
+    <Compile Include="TypeMapping.cs" />
+    <Compile Include="PropertyPair.cs" />
+    <Compile Include="PropertyPairChild.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="PropertyCopier.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddPropertyRuleExpressionVisitor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

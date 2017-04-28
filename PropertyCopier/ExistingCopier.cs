@@ -8,13 +8,11 @@ namespace PropertyCopier
     {
         // Stores the delegate required to create a new object.
         // As this is compiled it is much faster than reflection.
-
         #region Static Fields
 
-        private static readonly Lazy<Func<TSource, TTarget, TTarget>> Copier =
+        internal static readonly Lazy<Func<TSource, TTarget, TTarget>> Copier =
             new Lazy<Func<TSource, TTarget, TTarget>>(
-                () => ExpressionBuilder.CreateLambdaPropertyCopier<TSource, TTarget>().Compile(),
-                true);
+                () => ExpressionBuilder.CreateLambdaPropertyCopier<TSource, TTarget>(new MappingData<TSource, TTarget>()).Compile());
 
         #endregion
 

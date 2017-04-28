@@ -16,8 +16,8 @@ namespace PropertyCopier
         /// Checks if the type implements the generic interface.
         /// </summary>
         /// <param name="generic">The generic type.</param>
-        /// <param name="toCheck">To check type.</param>
-        /// <returns>The type of the first generic argument if the To check type implements the generic interface, otherwise null.</returns>
+        /// <param name="toCheck">Target check type.</param>
+        /// <returns>The type of the first generic argument if the Target check type implements the generic interface, otherwise null.</returns>
         internal static Type ImplementsGenericInterface(this Type toCheck, Type generic)
         {
             var interfaces = toCheck.GetInterfaces();
@@ -324,8 +324,8 @@ namespace PropertyCopier
         /// <summary>
         /// Determines whether from type is castable to the to type.
         /// </summary>
-        /// <param name="from">From.</param>
-        /// <param name="to">To.</param>
+        /// <param name="from">Source.</param>
+        /// <param name="to">Target.</param>
         /// <returns></returns>
         internal static bool IsCastableTo(this Type from, Type to)
         {
