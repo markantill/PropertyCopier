@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PropertyCopier
 {
@@ -17,7 +18,9 @@ namespace PropertyCopier
 
 	    private static readonly Lazy<Func<TSource, TTarget>> Copier = new Lazy<Func<TSource, TTarget>>(
 	        () => ExpressionBuilder
-	            .CreateLambdaInitializer<TSource, TTarget>(new MappingData<TSource, TTarget> { ScalarOnly = true })
+	            .CreateLambdaInitializer<TSource, TTarget>(
+                    new MappingData<TSource, TTarget> { ScalarOnly = true },
+                    new List<MappingData>())
 	            .Compile(),
 	        true);
 

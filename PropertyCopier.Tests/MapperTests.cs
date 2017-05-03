@@ -133,7 +133,7 @@ namespace PropertyCopier.Tests
         {            
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var mapper = new Mapper();
-            var results = sourceData.Select(mapper.CopyExpression<EntityOne, DtoOne>()).ToList();
+            var results = sourceData.Select(mapper.Expression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
 
@@ -152,7 +152,7 @@ namespace PropertyCopier.Tests
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var mapper = new Mapper();
             mapper.IgnoreProperty<EntityOne, DtoOne>(t => t.ID);
-            var results = sourceData.Select(mapper.CopyExpression<EntityOne, DtoOne>()).ToList();
+            var results = sourceData.Select(mapper.Expression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
 
@@ -171,7 +171,7 @@ namespace PropertyCopier.Tests
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var mapper = new Mapper();
             mapper.ForProperty<EntityOne, DtoOne, int>(t => t.ID, s => s.ID * 2);
-            var results = sourceData.Select(mapper.CopyExpression<EntityOne, DtoOne>()).ToList();
+            var results = sourceData.Select(mapper.Expression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
 
@@ -183,6 +183,37 @@ namespace PropertyCopier.Tests
             AreEqual(20, last.ID);
             AreEqual("Name10", last.Name);
         }
+
+        [Test]
+        public void PropertyDefinedMapping()
+        {
+            var mapper = new Mapper();
+            mapper.SetMappingRule<DateTime, long>(s => s.Ticks);
+            var date = new DateTime(1980, 1, 1);
+
+            var dto = mapper.Map<EntityDateTime, DtoDateTicks>(new EntityDateTime {Id = 10, Name = "Type map test", Time = date});
+            AreEqual(10, dto.Id);
+            AreEqual("Type map test", dto.Name);
+            AreEqual(date.Ticks, dto.Time);
+        }
+    }
+
+    public class EntityDateTime
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+
+        public DateTime Time { get; set; }
+    }
+
+    public class DtoDateTicks
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+
+        public long Time { get; set; }
     }
 }
 

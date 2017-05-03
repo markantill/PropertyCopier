@@ -4,34 +4,28 @@ using System.Linq.Expressions;
 
 namespace PropertyCopier
 {
-    public class AddPropertyRuleExpressionVisitor : ExpressionVisitor
+    public class AddTypeRuleExpressionVisitor : ExpressionVisitor
     {
         private bool _firstCall = true;
-        private readonly Expression _sourceParameter;        
+        private readonly Expression _sourceProperty;        
         private ParameterExpression _originalSourceParmeter;        
 
-        public AddPropertyRuleExpressionVisitor(Expression sourceParameter)
+        public AddTypeRuleExpressionVisitor(Expression sourceProperty)
         {
-            _sourceParameter = sourceParameter;            
+            _sourceProperty = sourceProperty;            
         }
 
-        protected override Expression VisitParameter(ParameterExpression node)
+        protected override Expression VisitMember(MemberExpression node)
         {
-            if (node == _originalSourceParmeter)
-            {
-                return _sourceParameter;
-            }
-
-            return node;
+            return base.VisitMember(node);
         }
-            
 
         public override Expression Visit(Expression node)
-        {            
+        {
             if (_firstCall)
             {
+                _firstCall = false;
                 var lambdaExpression = node as LambdaExpression;
-                _firstCall = false;                
                 if (lambdaExpression == null)
                 {
                     throw new ArgumentException($"{nameof(node)} must be of type {nameof(LambdaExpression)}",
@@ -46,7 +40,6 @@ namespace PropertyCopier
 
                 _originalSourceParmeter = parameters.Single();
 
-                return Expression.Lambda(base.Visit(lambdaExpression.Body), lambdaExpression.Parameters);
             }
 
             return base.Visit(node);

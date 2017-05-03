@@ -23,9 +23,13 @@ namespace PropertyCopier
         /// <param name="mappingData">Optional mapping data to be applied.</param>
         /// <returns>Lambda expression to initialise object.</returns>
         internal static Expression<Func<TSource, TTarget>> CreateLambdaInitializer<TSource, TTarget>(            
-            MappingData<TSource, TTarget> mappingData)
+            MappingData<TSource, TTarget> mappingData,
+            ICollection<MappingData> mappingDataCollection)
         {
-            return (Expression<Func<TSource, TTarget>>)CreateLambdaInitializer(typeof(TSource), typeof(TTarget), mappingData);
+            return (Expression<Func<TSource, TTarget>>) CreateLambdaInitializer(
+                typeof(TSource), 
+                typeof(TTarget),
+                mappingData, mappingDataCollection);
         }
 
         /// <summary>
@@ -39,13 +43,14 @@ namespace PropertyCopier
         internal static LambdaExpression CreateLambdaInitializer(
             Type source,
             Type target,
-            MappingData mappingData)
+            MappingData mappingData,
+            ICollection<MappingData> mappingDataCollection)
         {
             // Were going to build an expression that looks like:
             // source => new Foo { Property1 = bar.Property1, Property2 = bar.Property2 }
             var sourceParameter = Expression.Parameter(source, nameof(source));
 
-            var initializer = CreateLambdaInitializerBody(source, target, sourceParameter, mappingData);
+            var initializer = CreateLambdaInitializerBody(source, target, sourceParameter, mappingData, mappingDataCollection);
 
             // Create a Lambda expression from the parameter and body we have already created.
             var copyExpression = Expression.Lambda(initializer, sourceParameter);
@@ -134,7 +139,7 @@ namespace PropertyCopier
             return exp;
         }
 
-        private static PropertyRuleResult GetPredefinedRule(PropertyRule propertyLambdaExpression, ParameterExpression sourcExpression)
+        private static PropertyRuleResult GetPredefinedRule(PropertyRule propertyLambdaExpression, Expression sourcExpression)
         {
             var targetProperty = (PropertyInfo)GetMemberInfo(propertyLambdaExpression.PropertyExpression);
             var visitor = new AddPropertyRuleExpressionVisitor(sourcExpression);
@@ -226,48 +231,53 @@ namespace PropertyCopier
         /// <returns>Expression for lambda body.</returns>
         private static Expression CreateLambdaInitializerBody(
             Type source,
-            Type target,            
+            Type target,
             Expression sourceParameter,
-            MappingData mappingData)
+            MappingData mappingData,
+            ICollection<MappingData> mappingDataCollection)
         {
             // MemberBindings are going to be values inside the braces of the expression e.g. Property1 = source.Property1
             var bindings = new List<MemberBinding>();
             var sourceProperties = GetSourceProperties(source, mappingData.ScalarOnly).ToList();
             var targetProperties = target.GetProperties();
             var alreadyMatched = mappingData.PropertyIgnoreLambdaExpressions == null
-                ? new HashSet<PropertyInfo>() 
-                : new HashSet<PropertyInfo>(mappingData.PropertyIgnoreLambdaExpressions.Select(GetMemberInfo).OfType<PropertyInfo>());
+                ? new HashSet<PropertyInfo>()
+                : new HashSet<PropertyInfo>(mappingData.PropertyIgnoreLambdaExpressions.Select(GetMemberInfo)
+                    .OfType<PropertyInfo>());
 
             targetProperties = targetProperties.Except(alreadyMatched, new PropertyInfoComparer()).ToArray();
 
             // Apply any specific rules for those properties.
-            var parmeterExpression = sourceParameter as ParameterExpression;
 
-            if (parmeterExpression != null)
+            foreach (var propertyRule in mappingData.PropertyLambdaExpressions)
             {
-                foreach (var propertyRule in mappingData.PropertyLambdaExpressions)
-                {
-                    var predefined = GetPredefinedRule(propertyRule, parmeterExpression);
-                    alreadyMatched.Add(predefined.Property);
-                    bindings.Add(Expression.Bind(predefined.Property, predefined.Expression));
-                }
-
-                targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+                var predefined = GetPredefinedRule(propertyRule, sourceParameter);
+                alreadyMatched.Add(predefined.Property);
+                bindings.Add(Expression.Bind(predefined.Property, predefined.Expression));
             }
-            
+
+            targetProperties = targetProperties.Except(alreadyMatched).ToArray();
+
             // Any specific rules for the types
-            var knownMappings = GetKnownProperties(sourceProperties, targetProperties, mappingData);
+            var knownMappings = GetKnownProperties(sourceProperties, targetProperties, mappingDataCollection);
             foreach (var knownMapping in knownMappings)
             {
-                
+                var propertyExpression = Expression.Property(sourceParameter, knownMapping.SourceProperty);
+                var visitor = new AddPropertyRuleExpressionVisitor(propertyExpression);
+                var newMapping = (LambdaExpression)visitor.Visit(knownMapping.DefinedMapping.Mapping);
+                alreadyMatched.Add(knownMapping.TargetProperty);
+                bindings.Add(Expression.Bind(knownMapping.TargetProperty, newMapping.Body));                
             }
+
+            targetProperties = targetProperties.Except(alreadyMatched).ToArray();
 
             // normal matches e.g. Foo.ID = Bar.ID
             var matches = GetMatchedProperties(sourceProperties, targetProperties);
 
             foreach (var propertyMatch in matches)
             {
-                if (propertyMatch.TargetProperty.PropertyType.IsValueType || propertyMatch.TargetProperty.PropertyType == typeof(string))
+                if (propertyMatch.TargetProperty.PropertyType.IsValueType ||
+                    propertyMatch.TargetProperty.PropertyType == typeof(string))
                 {
                     var sourceExp = CreateSourceExpression(
                         source,
@@ -288,7 +298,7 @@ namespace PropertyCopier
             foreach (var propertyMatch in flattenedProperties)
             {
                 var sourceEx = CreateNestedPropertyExpression(
-                    Expression.Property(sourceParameter, propertyMatch.SourceProperty),                    
+                    Expression.Property(sourceParameter, propertyMatch.SourceProperty),
                     propertyMatch.ChildProperty.Name,
                     propertyMatch.TargetProperty.PropertyType);
                 bindings.Add(Expression.Bind(propertyMatch.TargetProperty, sourceEx));
@@ -309,9 +319,10 @@ namespace PropertyCopier
 
                 var exp = CreateLambdaInitializerBody(
                     propertyMatch.SourceProperty.PropertyType,
-                    propertyMatch.TargetProperty.PropertyType,                    
+                    propertyMatch.TargetProperty.PropertyType,
                     propExpression,
-                    mappingData);
+                    mappingData,
+                    mappingDataCollection);
 
                 bindings.Add(Expression.Bind(propertyMatch.TargetProperty, exp));
                 alreadyMatched.Add(propertyMatch.TargetProperty);
@@ -324,14 +335,14 @@ namespace PropertyCopier
 
             bindings.AddRange(
                 from enumeration in enumerations
-                    let propExpression =
-                        CreateNestedPropertyExpression(sourceParameter, enumeration.SourceProperty.Name)
-                    let enumerableSourceItemType = enumeration.SourceProperty.PropertyType.GetGenericArguments().First()
-                    let enumerableTargetItemType = enumeration.TargetProperty.PropertyType.GetGenericArguments().First()
-                    let childInitializser =
-                        CreateLambdaInitializer(enumerableSourceItemType, enumerableTargetItemType, mappingData)
-                    let selectCall = CallEnumerableMethod(propExpression, childInitializser, nameof(Enumerable.Select))
-                    select Expression.Bind(enumeration.TargetProperty, selectCall));
+                let propExpression =
+                CreateNestedPropertyExpression(sourceParameter, enumeration.SourceProperty.Name)
+                let enumerableSourceItemType = enumeration.SourceProperty.PropertyType.GetGenericArguments().First()
+                let enumerableTargetItemType = enumeration.TargetProperty.PropertyType.GetGenericArguments().First()
+                let childInitializser =
+                CreateLambdaInitializer(enumerableSourceItemType, enumerableTargetItemType, mappingData, mappingDataCollection)
+                let selectCall = CallEnumerableMethod(propExpression, childInitializser, nameof(Enumerable.Select))
+                select Expression.Bind(enumeration.TargetProperty, selectCall));
 
             // Create Expression for initialising object with correct values, the new MyClass part of the expression.            
             var initializer = Expression.MemberInit(Expression.New(target), bindings);
@@ -526,7 +537,7 @@ namespace PropertyCopier
             return sourceExp;
         }
 
-        private static IEnumerable<PropertyPair> GetMatchedProperties(
+        private static IEnumerable<PropertyPair> GetNameMatchedProperties(
             IEnumerable<PropertyInfo> sourceProperties,
             IEnumerable<PropertyInfo> targetProperties)
         {
@@ -534,31 +545,47 @@ namespace PropertyCopier
                 from sProperty in sourceProperties
                 where sProperty.CanRead
                 join tProperty in targetProperties
-                    on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
+                on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
                 where tProperty.CanWrite
-                where sProperty.PropertyType.IsCastableTo(tProperty.PropertyType)
                 select new PropertyPair { TargetProperty = tProperty, SourceProperty = sProperty };
 
+            return matches;
+        }
+
+        private static IEnumerable<PropertyPair> GetMatchedProperties(
+            IEnumerable<PropertyInfo> sourceProperties,
+            IEnumerable<PropertyInfo> targetProperties)
+        {
+            var matches =
+                from match in GetNameMatchedProperties(sourceProperties, targetProperties)
+                where match.SourceProperty.PropertyType.IsCastableTo(match.TargetProperty.PropertyType)
+                select match;
+            
             return matches;
         }
 
         private static IEnumerable<DefinedMappingPropertyPair> GetKnownProperties(
             IEnumerable<PropertyInfo> sourceProperties,
             IEnumerable<PropertyInfo> targetProperties,
-            MappingData mappingData)
+            ICollection<MappingData> mappingDataCollection)
         {
-            var matches = GetMatchedProperties(sourceProperties, targetProperties);
+            var matches = GetNameMatchedProperties(sourceProperties, targetProperties);
 
             var knownMappings =
                 from match in matches
-                join mappingRule in mappingData.DefinedMappingRules
-                on new {Source = match.SourceProperty.PropertyType, Target = match.TargetProperty.PropertyType}
-                equals new {Source = mappingRule.SourceType, Target = mappingRule.TargetType}
+                join mappingData in mappingDataCollection
+                on new { Source = match.SourceProperty.PropertyType, Target = match.TargetProperty.PropertyType}
+                equals new { Source = mappingData.SourceType, Target = mappingData.TargetType }
                 select new DefinedMappingPropertyPair
                 {
                     SourceProperty = match.SourceProperty,
                     TargetProperty = match.TargetProperty,
-                    DefinedMapping = mappingRule,
+                    DefinedMapping = new DefinedMapping
+                    {
+                        SourceType = mappingData.SourceType,
+                        TargetType = mappingData.TargetType,
+                        Mapping = mappingData.InitializerExpression
+                    },
                 };
 
             return knownMappings;

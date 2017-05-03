@@ -39,7 +39,14 @@ namespace PropertyCopier
             return target;
         }
 
-        public Expression<Func<TSource, TTarget>> CopyExpression<TSource, TTarget>()            
+        /// <summary>
+        /// The generated <see cref="Expression"/> that will create a new instance
+        /// of TTarget from TSource.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>        
+        /// <typeparam name="TTarget">The target type/</typeparam>
+        /// <returns>The <see cref="Expression{TSource,TTarget}"/></returns>
+        public Expression<Func<TSource, TTarget>> Expression<TSource, TTarget>()            
             where TTarget : new()
         {
             var mappingData = GetMappingData<TSource, TTarget>();
@@ -53,6 +60,12 @@ namespace PropertyCopier
             mappingData.ScalarOnly = scalarOnly;
         }
 
+        /// <summary>
+        /// Specify a property on the target not to be mapped to.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>        
+        /// <typeparam name="TTarget">The target type/</typeparam>
+        /// <param name="propertyToIgnore">Expression identifying the property to be ignored.</param>        
         public void IgnoreProperty<TSource, TTarget>(Expression<Func<TTarget, object>> propertyToIgnore)            
             where TTarget : new()
         {
@@ -76,6 +89,13 @@ namespace PropertyCopier
                 new PropertyRule { PropertyExpression = targetProperty, MappingRule = mappingfunction });
         }
 
+        public void SetMappingRule<TSource, TTarget>(Expression<Func<TSource, TTarget>> mappingfunction)
+            where TTarget : new()
+        {
+            var mappingData = GetOrCreateMappingData<TSource, TTarget>();
+            mappingData.PredefinedExpression = mappingfunction;
+        }
+
         private MappingData<TSource, TTarget> GetMappingData<TSource, TTarget>()            
             where TTarget : new()
         {
@@ -85,9 +105,7 @@ namespace PropertyCopier
                    new MappingData<TSource, TTarget>
                    {
                        ScalarOnly = false,
-                       InitializerMappingExpression = PropertyCopier<TSource, TTarget>.Expression,
-                       InitializerMappingFunction = PropertyCopier<TSource, TTarget>.Copier,
-                       CopyMappingFunction = ExistingCopier<TSource, TTarget>.Copier,
+                       Mappings = _mappings,
                    };
         }
 
@@ -98,7 +116,7 @@ namespace PropertyCopier
             var typeMapping = new TypeMapping(typeof(TSource), typeof(TTarget));
             if (!_mappings.TryGetValue(new TypeMapping(typeof(TSource), typeof(TTarget)), out existingMappingData))
             {
-                existingMappingData = new MappingData<TSource, TTarget>();
+                existingMappingData = new MappingData<TSource, TTarget> { Mappings = _mappings };
                 _mappings.Add(typeMapping, existingMappingData);                
                 return (MappingData<TSource, TTarget>) existingMappingData;            
             }
