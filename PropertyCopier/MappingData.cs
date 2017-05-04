@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace PropertyCopier
 {
@@ -11,7 +12,7 @@ namespace PropertyCopier
         public MappingData()
         {
             InitializerMappingExpression = new Lazy<Expression<Func<TSource, TTarget>>>(
-                () => PredefinedExpression ?? ExpressionBuilder.CreateLambdaInitializer(this, new ReadOnlyCollection<MappingData>(Mappings.Values.ToList())));
+                () => PredefinedExpression ?? ExpressionBuilder.CreateLambdaInitializer(this));
 
             InitializerMappingFunction = new Lazy<Func<TSource, TTarget>>(
                 () => InitializerMappingExpression.Value.Compile());
@@ -45,6 +46,9 @@ namespace PropertyCopier
         public override IEnumerable<PropertyRule> PropertyLambdaExpressions => PropertyExpressions;
 
         public override LambdaExpression InitializerExpression => InitializerMappingExpression.Value;
+
+        public override ICollection<MappingData> KnownMappings => Mappings.Values.ToList();      
+
     }
 
     internal abstract class MappingData
@@ -60,6 +64,50 @@ namespace PropertyCopier
         public abstract IEnumerable<PropertyRule> PropertyLambdaExpressions { get; }
 
         public abstract LambdaExpression InitializerExpression { get; }
+
+        public ICollection<PropertyInfo> GetSourceProperties()
+        {
+            var sourceProperties = SourceType.GetProperties()
+                .Where(p => p != null)
+                .Where(p => p.CanRead);
+            if (ScalarOnly)
+            {
+                sourceProperties =
+                    sourceProperties.Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string));
+            }
+
+            return sourceProperties.ToList();
+        }
+
+        public MappingData GetMappingFor(Type sourceType, Type targetType)
+        {
+            var mappingData = KnownMappings.FirstOrDefault(
+                                  m => m.SourceType == sourceType && m.TargetType == targetType) ??
+                              new DefaultMappingData(sourceType, targetType, KnownMappings);
+
+            return mappingData;
+        }
+
+        public abstract ICollection<MappingData> KnownMappings { get; }
+    }
+
+
+    internal class DefaultMappingData : MappingData
+    {
+        public DefaultMappingData(Type sourceType, Type targetType, ICollection<MappingData> knownMappings)
+        {
+            SourceType = sourceType;
+            TargetType = targetType;
+            KnownMappings = knownMappings;
+        }
+
+        public override Type SourceType { get; }
+        public override Type TargetType { get; }
+        public override IEnumerable<LambdaExpression> PropertyIgnoreLambdaExpressions { get; } = new List<LambdaExpression>();
+        public override IEnumerable<PropertyRule> PropertyLambdaExpressions { get; } = new List<PropertyRule>();
+        public override LambdaExpression InitializerExpression { get; } 
+
+        public override ICollection<MappingData> KnownMappings { get; }
     }
 
     internal class PropertyRule

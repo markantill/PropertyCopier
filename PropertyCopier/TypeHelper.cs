@@ -138,7 +138,7 @@ namespace PropertyCopier
                 return results;
             }
 
-            var nextProperties = string.Join(".", split.Skip(1));
+            var nextProperties = String.Join(".", split.Skip(1));
             var nextType = !isEnumerable ? propertyInfo.PropertyType : underlyingType;
 
             return GetAllProperties(nextType, nextProperties, results);
@@ -159,7 +159,7 @@ namespace PropertyCopier
             }
 
             var property = type.GetProperty(split[0]);
-            var newProperties = string.Join(".", split.Skip(1));
+            var newProperties = String.Join(".", split.Skip(1));
             var underlyingType = GetIEnumerableGenericType(property);
             var newType = underlyingType == null || underlyingType == typeof(char)
                               ? property.PropertyType
@@ -329,27 +329,27 @@ namespace PropertyCopier
         /// <returns></returns>
         internal static bool IsCastableTo(this Type from, Type to)
         {
-            if (to.IsAssignableFrom(from))
+            if (to.IsAssignableFrom(@from))
             {
                 return true;
             }
             
-            if (dict.ContainsKey(to) && dict[to].Contains(from))
+            if (dict.ContainsKey(to) && dict[to].Contains(@from))
             {
                 return true;
             }
             
-            if(from.IsEnum && IsCastableTo(to, typeof(int)))
+            if(@from.IsEnum && IsCastableTo(to, typeof(int)))
             {
                 return true;
             }
 
-            if(to.IsEnum && IsCastableTo(from, typeof(int)))
+            if(to.IsEnum && IsCastableTo(@from, typeof(int)))
             {
                 return true;
             }
 
-            bool castable = from.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            bool castable = @from.GetMethods(BindingFlags.Public | BindingFlags.Static)
                             .Any(
                                 m => m.ReturnType == to &&
                                 (m.Name == "op_Implicit" ||
@@ -367,6 +367,35 @@ namespace PropertyCopier
         internal static bool HasProperty(this Type type, string name)
         {
             return type.GetProperties().Any(pi => pi.Name == name);
+        }
+
+        internal static IEnumerable<PropertyPair> GetNameMatchedProperties(
+            IEnumerable<PropertyInfo> sourceProperties,
+            IEnumerable<PropertyInfo> targetProperties)
+        {
+            var matches =
+                from sProperty in sourceProperties
+                where sProperty.CanRead
+                join tProperty in targetProperties
+                on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
+                where tProperty.CanWrite
+                select new PropertyPair { TargetProperty = tProperty, SourceProperty = sProperty };
+
+            return matches;
+        }
+
+        internal static void CheckTypesAreCompatable(
+            Type source,
+            Type target,
+            PropertyInfo targetProperty,
+            PropertyInfo sourceProperty)
+        {
+            // Check assignment from one property to another is possible.
+            if (!sourceProperty.PropertyType.IsCastableTo(targetProperty.PropertyType))
+            {
+                throw new ArgumentException(
+                    $"Property {source.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {target.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
+            }
         }
     }
 }

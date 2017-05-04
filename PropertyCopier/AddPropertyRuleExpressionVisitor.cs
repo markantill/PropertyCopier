@@ -46,6 +46,8 @@ namespace PropertyCopier
 
                 _originalSourceParmeter = parameters.Single();
 
+                // We don't actually care about the parameters since only the body will be used so
+                // just leave them unchanged.
                 return Expression.Lambda(base.Visit(lambdaExpression.Body), lambdaExpression.Parameters);
             }
 

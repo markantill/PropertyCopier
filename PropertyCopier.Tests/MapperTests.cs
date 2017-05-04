@@ -12,7 +12,6 @@ namespace PropertyCopier.Tests
     [TestFixture]
     public class MapperTests
     {
-
         [Test]
         public void CopyNumber()
         {
@@ -196,6 +195,18 @@ namespace PropertyCopier.Tests
             AreEqual("Type map test", dto.Name);
             AreEqual(date.Ticks, dto.Time);
         }
+
+        [Test]
+        public void PropertiesCopiedToStuct()
+        {
+            var mapper = new Mapper();
+            var dto =
+                mapper.Map<EntityDateTime, DtoOneStruct>(
+                    new EntityDateTime {Id = 10, Name = "Test", Time = new DateTime(1980, 1, 1)});
+            AreEqual(10, dto.Id);
+            AreEqual("Test", dto.Name);
+            AreEqual(new DateTime(1980, 1, 1), dto.Time);
+        }
     }
 
     public class EntityDateTime
@@ -214,6 +225,15 @@ namespace PropertyCopier.Tests
         public string Name { get; set; }
 
         public long Time { get; set; }
+    }
+
+    public struct DtoOneStruct
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+
+        public DateTime Time { get; set; }
     }
 }
 

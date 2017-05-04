@@ -19,8 +19,7 @@ namespace PropertyCopier
 	    private static readonly Lazy<Func<TSource, TTarget>> Copier = new Lazy<Func<TSource, TTarget>>(
 	        () => ExpressionBuilder
 	            .CreateLambdaInitializer<TSource, TTarget>(
-                    new MappingData<TSource, TTarget> { ScalarOnly = true },
-                    new List<MappingData>())
+                    new MappingData<TSource, TTarget> { ScalarOnly = true })
 	            .Compile(),
 	        true);
 

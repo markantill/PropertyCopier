@@ -68,6 +68,14 @@
     <Compile Include="CopyFromEnumeration.cs" />
     <Compile Include="ExistingCopier.cs" />
     <Compile Include="ExpressionBuilder.cs" />
+    <Compile Include="Generators\ChildEnumerationGenerator.cs" />
+    <Compile Include="Generators\DefinedTypeRulesGenerator.cs" />
+    <Compile Include="Generators\DefinedPropertyRulesGenerator.cs" />
+    <Compile Include="Generators\FlattenedProperitesGenerator.cs" />
+    <Compile Include="Generators\IExpressionGenerator.cs" />
+    <Compile Include="Generators\IgnoreTargetPropertiesGenerator.cs" />
+    <Compile Include="Generators\MatchedPropertyNamesGenerator.cs" />
+    <Compile Include="Generators\SingleChildObjectGenerator.cs" />
     <Compile Include="Mapper.cs" />
     <Compile Include="MappingData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

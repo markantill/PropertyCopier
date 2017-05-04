@@ -19,9 +19,7 @@ namespace PropertyCopier
 
 	    internal static readonly Lazy<Expression<Func<TSource, TTarget>>> Expression =
             new Lazy<Expression<Func<TSource, TTarget>>>(
-	            () => ExpressionBuilder.CreateLambdaInitializer<TSource, TTarget>(
-                    new MappingData<TSource,TTarget>(),
-                    new List<MappingData>()));
+	            () => ExpressionBuilder.CreateLambdaInitializer(new MappingData<TSource,TTarget>()));
 
         internal static readonly Lazy<Func<TSource, TTarget>> Copier =
 			new Lazy<Func<TSource, TTarget>>(
