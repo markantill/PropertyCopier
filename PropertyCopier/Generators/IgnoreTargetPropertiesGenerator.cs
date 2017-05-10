@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace PropertyCopier.Generators
 {
+    /// <summary>
+    /// Remove any properties that the mapping data has marked to ignore.
+    /// </summary>
     internal class IgnoreTargetPropertiesGenerator : IExpressionGenerator
     {
         public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData)

@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace PropertyCopier.Generators
 {
+    /// <summary>
+    /// If we have any specific rules in the mapping data for specific properties use them.
+    /// </summary>
     internal class DefinedPropertyRulesGenerator : IExpressionGenerator
     {
         public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData)

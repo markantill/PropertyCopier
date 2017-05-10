@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace PropertyCopier.Generators
 {
+    /// <summary>
+    /// Match target properties to source properties of child objects based on names.
+    /// e.g. Target.ChildId = Source.Child.Id
+    /// </summary>
     internal class FlattenedProperitesGenerator : IExpressionGenerator
     {
         public ExpressionGeneratorResult GenerateExpressions(
@@ -29,7 +33,6 @@ namespace PropertyCopier.Generators
                 expressions.Add(new PropertyAndExpression(propertyMatch.TargetProperty, sourceEx));
                 matched.Add(propertyMatch.TargetProperty);
             }
-
 
             var newTargetProperties = targetProperties.Except(matched).ToArray();
             return new ExpressionGeneratorResult

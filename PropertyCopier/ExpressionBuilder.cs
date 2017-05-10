@@ -261,27 +261,38 @@ namespace PropertyCopier
             return call;
         }
 
-        internal static Expression CreateSourceExpression(
-            Type source,
-            Type target,
+        /// <summary>
+        /// Create an expression for the property on the source object.
+        /// Add in a cast if required.
+        /// </summary>
+        /// <param name="targetProperty">The target property.</param>
+        /// <param name="sourceProperty">The source property.</param>
+        /// <param name="sourceExpression">The source expression.</param>
+        /// <returns></returns>
+        internal static Expression CreateSourceExpression(            
             PropertyInfo targetProperty,
             PropertyInfo sourceProperty,
-            Expression sourceParameter)
+            Expression sourceExpression)
         {
             if (targetProperty.PropertyType == sourceProperty.PropertyType)
             {
-                return Expression.Property(sourceParameter, sourceProperty);
+                return Expression.Property(sourceExpression, sourceProperty);
             }
 
-            CheckTypesAreCompatable(source, target, targetProperty, sourceProperty);
+            CheckTypesAreCompatable(targetProperty, sourceProperty);
             Expression sourceExp = 
                 Expression.Convert(
-                    Expression.Property(sourceParameter, sourceProperty),
+                    Expression.Property(sourceExpression, sourceProperty),
                     targetProperty.PropertyType);
 
             return sourceExp;
         }
 
+        /// <summary>
+        /// Get the information on the member represented by property expression.
+        /// </summary>
+        /// <param name="propertyExpression">The expression representing the property.</param>
+        /// <returns>The <see cref="MemberInfo"/> of the property.</returns>
         internal static MemberInfo GetMemberInfo(LambdaExpression propertyExpression)
         {            
             var body = propertyExpression.Body as MemberExpression;            

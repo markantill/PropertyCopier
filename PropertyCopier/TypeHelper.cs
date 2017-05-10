@@ -385,8 +385,6 @@ namespace PropertyCopier
         }
 
         internal static void CheckTypesAreCompatable(
-            Type source,
-            Type target,
             PropertyInfo targetProperty,
             PropertyInfo sourceProperty)
         {
@@ -394,7 +392,7 @@ namespace PropertyCopier
             if (!sourceProperty.PropertyType.IsCastableTo(targetProperty.PropertyType))
             {
                 throw new ArgumentException(
-                    $"Property {source.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {target.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
+                    $"Property {sourceProperty.PropertyType.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {targetProperty.PropertyType.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
             }
         }
     }

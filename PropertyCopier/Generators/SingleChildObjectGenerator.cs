@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 
 namespace PropertyCopier.Generators
 {
+    /// <summary>
+    /// Generate expressions for properties of a child object (not enumeration) that
+    /// correspond with a source target object.
+    /// e.g. Target.Child = new Child { Id = Source.Child.Id }
+    /// </summary>
     internal class SingleChildObjectGenerator : IExpressionGenerator
     {
         public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties,

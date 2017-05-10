@@ -14,13 +14,10 @@ namespace PropertyCopier.Generators
         public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties,
             MappingData mappingData)
         {
-            var expressions = new List<PropertyAndExpression>();
-            var matched = new List<PropertyInfo>();            
+            var expressions = new List<PropertyAndExpression>();                        
 
             // Child enumerations e.g. Foo.Children = Bar.Children.Select(barchild => new ChildDto { ID = barchild.ID }
             var enumerations = GetChidEnumerations(mappingData.GetSourceProperties(), targetProperties);
-
-
 
             expressions.AddRange(
                 from enumeration in enumerations
@@ -34,7 +31,7 @@ namespace PropertyCopier.Generators
                 let selectCall = ExpressionBuilder.CallEnumerableMethod(propExpression, childInitializser, nameof(Enumerable.Select))
                 select new PropertyAndExpression(enumeration.TargetProperty, selectCall));
 
-            var newTargetProperties = targetProperties.Except(matched).ToArray();
+            var newTargetProperties = targetProperties.Except(expressions.Select(pe => pe.Property)).ToArray();
             return new ExpressionGeneratorResult
             {
                 Expressions = expressions,

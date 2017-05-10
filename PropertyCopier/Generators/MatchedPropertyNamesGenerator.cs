@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace PropertyCopier.Generators
 {
+    /// <summary>
+    /// Match properties based on same name (case insensitive) and source type
+    /// is castable to target type.
+    /// </summary>
     internal class MatchedPropertyNamesGenerator : IExpressionGenerator
     {
         public ExpressionGeneratorResult GenerateExpressions(
@@ -26,8 +30,6 @@ namespace PropertyCopier.Generators
                     propertyMatch.TargetProperty.PropertyType == typeof(string))
                 {
                     var sourceExp = ExpressionBuilder.CreateSourceExpression(
-                        propertyMatch.TargetProperty.PropertyType,
-                        propertyMatch.SourceProperty.PropertyType,
                         propertyMatch.TargetProperty,
                         propertyMatch.SourceProperty,
                         sourceExpression);

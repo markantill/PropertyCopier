@@ -8,28 +8,12 @@ using System.Threading.Tasks;
 
 namespace PropertyCopier.Generators
 {
+    /// <summary>
+    /// Produces a set of expressions for target properties based on a rule. Also returns
+    /// remaining target properties than the rule does not apply to.
+    /// </summary>
     internal interface IExpressionGenerator
     {
         ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData);
-    }
-
-    internal class ExpressionGeneratorResult
-    {
-        public ICollection<PropertyAndExpression> Expressions { get; set; }
-
-        public ICollection<PropertyInfo> TargetProperties { get; set; }
-    }
-
-    public class PropertyAndExpression
-    {
-        public PropertyAndExpression(PropertyInfo property, Expression expression)
-        {
-            Property = property;
-            Expression = expression;
-        }
-
-        public Expression Expression { get; set; }
-
-        public PropertyInfo Property { get; set; }
     }
 }
