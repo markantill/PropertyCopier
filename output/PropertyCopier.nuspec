@@ -2,18 +2,15 @@
 <package >
   <metadata>
     <id>PropertyCopier</id>
-    <version>1.0.1</version>
+    <version>2.0.0</version>
     <authors>Mark Antill</authors>
     <owners>Mark Antill</owners>
     <licenseUrl>https://github.com/markantill/PropertyCopier/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/markantill/PropertyCopier</projectUrl>    
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>C# class to automatically copy properties between objects by creating expression trees to copy the properties, usable in LINQ queries.</description>
-    <releaseNotes>Add support for 4.0 and 4.5.</releaseNotes>
+    <releaseNotes>Added support for multiple instances with different rules.</releaseNotes>
     <copyright>Copyright 2017</copyright>
-    <tags>Property Copy</tags>
-    <dependencies>
-      <dependency id="Mono.Linq.Expressions" version="1.2.0.0" />
-    </dependencies>
+    <tags>Property Copy</tags>  
   </metadata>
 </package>

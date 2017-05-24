@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
+using PropertyCopier.Data;
 
 namespace PropertyCopier
 {
@@ -16,8 +17,8 @@ namespace PropertyCopier
         /// Checks if the type implements the generic interface.
         /// </summary>
         /// <param name="generic">The generic type.</param>
-        /// <param name="toCheck">To check type.</param>
-        /// <returns>The type of the first generic argument if the To check type implements the generic interface, otherwise null.</returns>
+        /// <param name="toCheck">Target check type.</param>
+        /// <returns>The type of the first generic argument if the Target check type implements the generic interface, otherwise null.</returns>
         internal static Type ImplementsGenericInterface(this Type toCheck, Type generic)
         {
             var interfaces = toCheck.GetInterfaces();
@@ -138,7 +139,7 @@ namespace PropertyCopier
                 return results;
             }
 
-            var nextProperties = string.Join(".", split.Skip(1));
+            var nextProperties = String.Join(".", split.Skip(1));
             var nextType = !isEnumerable ? propertyInfo.PropertyType : underlyingType;
 
             return GetAllProperties(nextType, nextProperties, results);
@@ -159,7 +160,7 @@ namespace PropertyCopier
             }
 
             var property = type.GetProperty(split[0]);
-            var newProperties = string.Join(".", split.Skip(1));
+            var newProperties = String.Join(".", split.Skip(1));
             var underlyingType = GetIEnumerableGenericType(property);
             var newType = underlyingType == null || underlyingType == typeof(char)
                               ? property.PropertyType
@@ -244,15 +245,15 @@ namespace PropertyCopier
             // or it implements IEnumerable<T> for some T. We need to find the interface.
             if (IsIEnumerable(type))
                 return type;
-            Type[] t = type.FindInterfaces((m, o) => IsIEnumerable(m), null);
-            
-            return t[0];
+            var t = type.FindInterfaces((m, o) => IsIEnumerable(m), null);
+
+            return t.FirstOrDefault();
         }
 
         /// <summary>
         /// The dictionary of types that can be cast.
         /// </summary>
-        private static readonly Dictionary<Type, List<Type>> dict = new Dictionary<Type, List<Type>>()
+        private static readonly Dictionary<Type, List<Type>> CastableValueTypes = new Dictionary<Type, List<Type>>
         {
             {
                 typeof(decimal),
@@ -324,32 +325,32 @@ namespace PropertyCopier
         /// <summary>
         /// Determines whether from type is castable to the to type.
         /// </summary>
-        /// <param name="from">From.</param>
-        /// <param name="to">To.</param>
+        /// <param name="from">Source.</param>
+        /// <param name="to">Target.</param>
         /// <returns></returns>
         internal static bool IsCastableTo(this Type from, Type to)
         {
-            if (to.IsAssignableFrom(from))
+            if (to.IsAssignableFrom(@from))
             {
                 return true;
             }
             
-            if (dict.ContainsKey(to) && dict[to].Contains(from))
+            if (CastableValueTypes.ContainsKey(to) && CastableValueTypes[to].Contains(@from))
             {
                 return true;
             }
             
-            if(from.IsEnum && IsCastableTo(to, typeof(int)))
+            if(@from.IsEnum && IsCastableTo(to, typeof(int)))
             {
                 return true;
             }
 
-            if(to.IsEnum && IsCastableTo(from, typeof(int)))
+            if(to.IsEnum && IsCastableTo(@from, typeof(int)))
             {
                 return true;
             }
 
-            bool castable = from.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            bool castable = @from.GetMethods(BindingFlags.Public | BindingFlags.Static)
                             .Any(
                                 m => m.ReturnType == to &&
                                 (m.Name == "op_Implicit" ||
@@ -367,6 +368,46 @@ namespace PropertyCopier
         internal static bool HasProperty(this Type type, string name)
         {
             return type.GetProperties().Any(pi => pi.Name == name);
+        }
+
+        internal static IEnumerable<PropertyPair> GetNameMatchedProperties(
+            IEnumerable<PropertyInfo> sourceProperties,
+            IEnumerable<PropertyInfo> targetProperties,
+            IEqualityComparer<string> comparer = null)
+        {
+            comparer = comparer ?? new DefaultStringComparer();
+
+            var matches =
+                sourceProperties.Where(s => s.CanRead)
+                    .Join(targetProperties.Where(t => t.CanWrite), s => s.Name, t => t.Name,
+                        (s, t) => new PropertyPair {TargetProperty = t, SourceProperty = s}, comparer);
+           
+            return matches;
+        }
+
+        internal static void CheckTypesAreCompatable(
+            PropertyInfo targetProperty,
+            PropertyInfo sourceProperty)
+        {
+            // Check assignment from one property to another is possible.
+            if (!sourceProperty.PropertyType.IsCastableTo(targetProperty.PropertyType))
+            {
+                throw new ArgumentException(
+                    $"Property {sourceProperty.PropertyType.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {targetProperty.PropertyType.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
+            }
+        }
+    }
+
+    internal class DefaultStringComparer : IEqualityComparer<string>
+    {
+        public bool Equals(string x, string y)
+        {
+            return string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public int GetHashCode(string obj)
+        {
+            return obj.ToUpperInvariant().GetHashCode();
         }
     }
 }
