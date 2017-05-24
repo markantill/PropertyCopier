@@ -17,12 +17,11 @@ namespace PropertyCopier.Generators
     internal class ChildCollectionGenerator : IExpressionGenerator
     {
 #if NET45
-        private readonly Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(IReadOnlyList<>), typeof(ICollection<>), typeof(IReadOnlyCollection<>) };
-        private readonly Type[] _hashSetTypes = { typeof(HashSet<>), typeof(ISet<>) };
+        private readonly Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(IReadOnlyList<>), typeof(ICollection<>), typeof(IReadOnlyCollection<>) };        
 #elif NET40
-        Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(ICollection<>) };
-        Type[] _hashSetTypes = { typeof(HashSet<>) };
+        private readonly Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(ICollection<>) };        
 #endif
+        private readonly Type[] _hashSetTypes = { typeof(HashSet<>), typeof(ISet<>) };
         private readonly Type[] _linkedListTypes = { typeof(LinkedList<>) };
         private readonly Type[] _readOnlyCollectionTypes = { typeof(ReadOnlyCollection<>) };
 
