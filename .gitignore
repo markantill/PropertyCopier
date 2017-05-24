@@ -198,3 +198,8 @@ FakesAssemblies/
 # Visual Studio 6 workspace options file
 *.opt
 
+output/Build/*
+output/lib/net40/*
+output/lib/net45/*
+output/output-nuget/*
+
