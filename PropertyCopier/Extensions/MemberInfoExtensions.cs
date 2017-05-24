@@ -31,8 +31,10 @@ namespace PropertyCopier.Extensions
                     return ((MethodInfo)memberInfo).ReturnType;
                 case MemberTypes.Property:
                     return ((PropertyInfo)memberInfo).PropertyType;
+#if NET45
                 case MemberTypes.TypeInfo:
                     return ((TypeInfo)memberInfo).DeclaringType;
+#endif              
                 default:
                     throw new ArgumentOutOfRangeException();
             }
