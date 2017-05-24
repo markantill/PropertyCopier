@@ -45,11 +45,12 @@ Copy every object in a collection:
 Instance based copier.
 
 Set up rules:
-	var copier = new Copier();	
-	copier.SetMapping<EntityOne, DtoOne>(comparer: StringComparer.InvariantCulture, scalarOnly: false);
-	copier.MapPropertyTo<EntityOne, DtoOne>(s => s.ID, t => t.Identity);
-	copier.IgnoreProperty<EntityOne, DtoOne>(t => t.Name);
-	copier.ForProperty<EntityOne, DtoOne>(t => t.ID, s => s.ID * 2);
+
+    var copier = new Copier();	
+    copier.SetMapping<EntityOne, DtoOne>(comparer: StringComparer.InvariantCulture, scalarOnly: false);
+    copier.MapPropertyTo<EntityOne, DtoOne>(s => s.ID, t => t.Identity);
+    copier.IgnoreProperty<EntityOne, DtoOne>(t => t.Name);
+    copier.ForProperty<EntityOne, DtoOne>(t => t.ID, s => s.ID * 2);
 
 Copy to new object:
 	
