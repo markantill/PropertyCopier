@@ -9,6 +9,9 @@ if "%NuGet%" == "" (
 	set NuGet=".nuget\nuget.exe"
 )
 
+REM Package restore
+call %NuGet% restore PropertyCopier.Tests\packages.config -OutputDirectory %cd%\packages -NonInteractive
+
 REM Build
 msbuild PropertyCopier.sln /p:Configuration="Release 4.0" /m /v:M /fl /flp:LogFile=msbuild.log;Verbosity=Normal /nr:false /tv:14.0
 msbuild PropertyCopier.sln /p:Configuration="Release 4.5" /m /v:M /fl /flp:LogFile=msbuild.log;Verbosity=Normal /nr:false /tv:14.0
