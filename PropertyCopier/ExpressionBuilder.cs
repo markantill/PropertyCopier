@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
+using PropertyCopier.Comparers;
+using PropertyCopier.Data;
 using PropertyCopier.Generators;
 using static PropertyCopier.TypeHelper;
 
@@ -69,9 +73,10 @@ namespace PropertyCopier
             var targetParameter = Expression.Parameter(typeof(TTarget), "target");            
             var targetProperties = typeof(TTarget).GetProperties();
             var exps = new List<Expression>();
+            var comparer = CreateComparer(mappingData);
 
             var generators = new IExpressionGenerator[]
-            {
+            {                
                 new IgnoreTargetPropertiesGenerator(),
                 new DefinedPropertyRulesGenerator(),
                 new DefinedTypeRulesGenerator(),
@@ -83,7 +88,7 @@ namespace PropertyCopier
 
             foreach (IExpressionGenerator expressionGenerator in generators)
             {
-                var results = expressionGenerator.GenerateExpressions(sourceParameter, availableTargets, mappingData);
+                var results = expressionGenerator.GenerateExpressions(sourceParameter, availableTargets, mappingData, comparer);
 
                 foreach (var result in results.Expressions)
                 {
@@ -139,16 +144,19 @@ namespace PropertyCopier
         /// <param name="collection">The expression representing the collection.</param>
         /// <param name="predicate">The expression that will be run.</param>
         /// <param name="methodName">Name of the method.</param>
+        /// <param name="asQueryable">If true the collection will be converted to IQueryable before applying the predicate. This allows it to work
+        /// with things like Linq to Entities.</param>
         /// <returns>Expression representing calling the method.</returns>
         internal static Expression CallEnumerableMethod(
             Expression collection,
-            Expression predicate,
-            string methodName)
+            LambdaExpression predicate,
+            string methodName,
+            bool asQueryable = true)
         {
             // Get the collections implementation of IEnumerable<T> so we can figure out what T is for it.
             var collectionType = GetIEnumerableImpl(collection.Type);
 
-            // Cast the collection to the IEnumerable<T> just for safety.
+            // Cast the collection to the IEnumerable<T> just for safety.            
             collection = Expression.Convert(collection, collectionType);
 
             // Get the type of the element in the collection, T.
@@ -160,15 +168,29 @@ namespace PropertyCopier
             // Figure out what the type of the predicate must be, it must be Func<T, bool>
             var predicateType = typeof(Func<,>).MakeGenericType(expTypes);
 
-            // Generate the Call Expressions
-            return GenerateMethodCallExpression(
-                collection,
-                predicate,
-                methodName,
-                predicateType,
-                elemType,
-                collectionType,
-                expTypes);
+            if (asQueryable)
+            {
+                // Generate the Call Expressions
+                return GenerateIQueryableCallExpression(
+                    collection,
+                    predicate,
+                    methodName,
+                    predicateType,
+                    elemType,
+                    collectionType,
+                    expTypes);
+            }
+            else
+            {
+                return GenerateIEnumerableCallExpression(
+                    collection,
+                    predicate,
+                    methodName,
+                    predicateType,
+                    elemType,
+                    collectionType,
+                    expTypes);
+            }
         }
 
         /// <summary>
@@ -188,9 +210,11 @@ namespace PropertyCopier
             // MemberBindings are going to be values inside the braces of the expression e.g. Property1 = source.Property1
             var bindings = new List<MemberBinding>();            
             var targetProperties = target.GetProperties();
-            
+
+            var comparer = CreateComparer(mappingData);
+
             var generators = new IExpressionGenerator[]
-            {
+            {                
                 new IgnoreTargetPropertiesGenerator(),
                 new DefinedPropertyRulesGenerator(), 
                 new DefinedTypeRulesGenerator(), 
@@ -198,18 +222,19 @@ namespace PropertyCopier
                 new FlattenedProperitesGenerator(),
                 new SingleChildObjectGenerator(),
                 new ChildEnumerationGenerator(),
+                new ChildCollectionGenerator(), 
             };
 
             ICollection<PropertyInfo> availableTargets = targetProperties;
 
             foreach (IExpressionGenerator expressionGenerator in generators)
             {                
-                var results = expressionGenerator.GenerateExpressions(sourceParameter, availableTargets, mappingData);
+                var results = expressionGenerator.GenerateExpressions(sourceParameter, availableTargets, mappingData, comparer);
                 var newBindings =
                     results.Expressions.Select(result => Expression.Bind(result.Property, result.Expression));
                 bindings.AddRange(newBindings);
 
-                availableTargets = results.TargetProperties;
+                availableTargets = results.UnmappedTargetProperties;
             }        
                     
             // Create Expression for initialising object with correct values, the new MyClass part of the expression.            
@@ -217,10 +242,44 @@ namespace PropertyCopier
             return initializer;
         }
 
+        private static IEqualityComparer<string> CreateComparer(MappingData mappingData)
+        {
+            var comparer = new PropertyNameComparer(mappingData.Comparer);
+            foreach (var map in mappingData.AssignedMappingsExpressions)
+            {
+                var targetMemberInfo = GetMemberInfo(map.PropertyExpression);
+                var sourceMemberInfo = GetMemberInfo(map.MappingRule);
+                comparer.AddMapping(targetMemberInfo.Name, sourceMemberInfo.Name);
+            }
 
-        private static Expression GenerateMethodCallExpression(
-            Expression collectionExpression,
-            Expression delegateExpression,
+            return comparer;
+        }
+
+        internal static LambdaExpression StripUnwantedObjectCast(Type desiredReturnType, LambdaExpression lambdaExpression)
+        {            
+            LambdaExpression result = lambdaExpression;
+
+            // Check if we have an unwanted cast to object put in by the compiler
+            // if so make a new expression that strips it out            
+            if (desiredReturnType != typeof(object))
+            {
+                var body = lambdaExpression.Body;
+                var unary = body as UnaryExpression;
+                if (unary != null && unary.NodeType == ExpressionType.Convert && unary.Type == typeof(object))
+                {
+                    var newBody = unary.Operand;
+                    result = Expression.Lambda(
+                        newBody,
+                        lambdaExpression.Parameters);                    
+                }
+            }
+
+            return result;            
+        }
+
+        private static Expression GenerateIQueryableCallExpression(
+            Expression ienumerableExpression,
+            LambdaExpression delegateExpression,
             string methodName,
             Type delegateType,
             Type elementType,
@@ -231,7 +290,7 @@ namespace PropertyCopier
             // Expression<Func<T, bool>>
             var expressionPredicateType = typeof(Expression<>).MakeGenericType(delegateType);
 
-            // Get the Queryable.AsQueryable method for the collection expresions.
+            // Get the Queryable.AsQueryable method for the collection expressions.
             var asQueryableMethod = (MethodInfo)
                 GetGenericMethod(
                     typeof(Queryable),
@@ -241,9 +300,9 @@ namespace PropertyCopier
                     BindingFlags.Static);
 
             // Apply the AsQueryable method. We need to do this so we have a method that we can
-            // pass an expression into that we can build up. If it stays as as IEnumerable we would need to 
-            // pass in a delgate not an expression and that wouldn't work if were working with Linq to Entites or similar.
-            var collectionAsQueryable = Expression.Call(asQueryableMethod, collectionExpression);
+            // pass an expression into that we can build up. If it stays as IEnumerable we would need to 
+            // pass in a delegate not an expression and that wouldn't work if were working with Linq to Entities or similar.
+            var collectionAsQueryable = Expression.Call(asQueryableMethod, ienumerableExpression);
 
             // Figure out they type now it is an IQueryable<T>.
             var queryableType = typeof(IQueryable<>).MakeGenericType(elementType);
@@ -258,6 +317,32 @@ namespace PropertyCopier
 
             // Actually call the method.
             var call = Expression.Call(method, collectionAsQueryable, Expression.Constant(delegateExpression));
+            return call;
+        }
+
+        private static Expression GenerateIEnumerableCallExpression(
+            Expression ienumerableExpression,
+            LambdaExpression delegateExpression,
+            string methodName,
+            Type delegateType,
+            Type elementType,
+            Type collectionType,
+            Type[] delegateGenericParamaters)
+        {
+            var enumerableType = GetIEnumerableImpl(collectionType);
+
+            // Get our actual method to call, signature is Queryable.[methodName]<T>(IQueryable<T>, Expression<Func<T,bool>>)
+            var method = (MethodInfo)GetGenericMethod(
+                typeof(Enumerable),
+                methodName,
+                delegateGenericParamaters,
+                new[] { enumerableType, delegateType },
+                BindingFlags.Static);
+
+            var func = delegateExpression.Compile();
+
+            // Actually call the method.
+            var call = Expression.Call(method, ienumerableExpression, Expression.Constant(func));
             return call;
         }
 

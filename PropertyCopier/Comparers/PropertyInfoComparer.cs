@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
-namespace PropertyCopier
+namespace PropertyCopier.Comparers
 {
     /// <summary>
     /// Compare two <see cref="PropertyInfo"/> objects to see if they are the
@@ -9,12 +10,14 @@ namespace PropertyCopier
     /// </summary>
     internal class PropertyInfoComparer : IEqualityComparer<PropertyInfo>
     {
+        /// <inheritdoc cref="IEqualityComparer{T}"/>
         public bool Equals(PropertyInfo x, PropertyInfo y)
         {
             return x.Name == y.Name &&
                    x.PropertyType == y.PropertyType;
         }
 
+        /// <inheritdoc cref="IEqualityComparer{T}"/>
         public int GetHashCode(PropertyInfo obj)
         {
             unchecked

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
+using PropertyCopier.Data;
 
 namespace PropertyCopier
 {
@@ -244,15 +245,15 @@ namespace PropertyCopier
             // or it implements IEnumerable<T> for some T. We need to find the interface.
             if (IsIEnumerable(type))
                 return type;
-            Type[] t = type.FindInterfaces((m, o) => IsIEnumerable(m), null);
-            
-            return t[0];
+            var t = type.FindInterfaces((m, o) => IsIEnumerable(m), null);
+
+            return t.FirstOrDefault();
         }
 
         /// <summary>
         /// The dictionary of types that can be cast.
         /// </summary>
-        private static readonly Dictionary<Type, List<Type>> dict = new Dictionary<Type, List<Type>>()
+        private static readonly Dictionary<Type, List<Type>> CastableValueTypes = new Dictionary<Type, List<Type>>
         {
             {
                 typeof(decimal),
@@ -334,7 +335,7 @@ namespace PropertyCopier
                 return true;
             }
             
-            if (dict.ContainsKey(to) && dict[to].Contains(@from))
+            if (CastableValueTypes.ContainsKey(to) && CastableValueTypes[to].Contains(@from))
             {
                 return true;
             }
@@ -371,16 +372,16 @@ namespace PropertyCopier
 
         internal static IEnumerable<PropertyPair> GetNameMatchedProperties(
             IEnumerable<PropertyInfo> sourceProperties,
-            IEnumerable<PropertyInfo> targetProperties)
+            IEnumerable<PropertyInfo> targetProperties,
+            IEqualityComparer<string> comparer = null)
         {
-            var matches =
-                from sProperty in sourceProperties
-                where sProperty.CanRead
-                join tProperty in targetProperties
-                on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
-                where tProperty.CanWrite
-                select new PropertyPair { TargetProperty = tProperty, SourceProperty = sProperty };
+            comparer = comparer ?? new DefaultStringComparer();
 
+            var matches =
+                sourceProperties.Where(s => s.CanRead)
+                    .Join(targetProperties.Where(t => t.CanWrite), s => s.Name, t => t.Name,
+                        (s, t) => new PropertyPair {TargetProperty = t, SourceProperty = s}, comparer);
+           
             return matches;
         }
 
@@ -394,6 +395,19 @@ namespace PropertyCopier
                 throw new ArgumentException(
                     $"Property {sourceProperty.PropertyType.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {targetProperty.PropertyType.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
             }
+        }
+    }
+
+    internal class DefaultStringComparer : IEqualityComparer<string>
+    {
+        public bool Equals(string x, string y)
+        {
+            return string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public int GetHashCode(string obj)
+        {
+            return obj.ToUpperInvariant().GetHashCode();
         }
     }
 }

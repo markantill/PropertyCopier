@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace PropertyCopier
+namespace PropertyCopier.Data
 {
     /// <summary>
-    /// Used to store the type mapping information.
+    /// Used as a key to store the type mapping information.
     /// </summary>
     internal class TypeMapping : IEquatable<TypeMapping>
     {
@@ -23,8 +19,8 @@ namespace PropertyCopier
 
         public bool Equals(TypeMapping other)
         {
-            if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
+            if (ReferenceEquals(null, other)) return false;         
             return Equals(Source, other.Source) && Equals(Target, other.Target);
         }
 
@@ -40,7 +36,7 @@ namespace PropertyCopier
         {
             unchecked
             {
-                return ((Source != null ? Source.GetHashCode() : 0) * 397) ^ (Target != null ? Target.GetHashCode() : 0);
+                return (Source?.GetHashCode() ?? 0) * 397 ^ (Target?.GetHashCode() ?? 0);
             }
         }
     }

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using PropertyCopier.Data;
 
 namespace PropertyCopier.Generators
 {
@@ -14,6 +15,18 @@ namespace PropertyCopier.Generators
     /// </summary>
     internal interface IExpressionGenerator
     {
-        ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData);
+        /// <summary>
+        /// Generate appropriate expressions with the rules provided.
+        /// </summary>
+        /// <param name="sourceExpression">The source expression.</param>
+        /// <param name="targetProperties">The target properties to inspect.</param>
+        /// <param name="mappingData">The mapping data rules/</param>
+        /// <param name="memberNameComparer">The comparer to use for matching names.</param>
+        /// <returns>Any expressions generated and any target properties still un-mapped.</returns>
+        ExpressionGeneratorResult GenerateExpressions(
+            Expression sourceExpression,
+            ICollection<PropertyInfo> targetProperties,
+            MappingData mappingData,
+            IEqualityComparer<string> memberNameComparer);        
     }
 }

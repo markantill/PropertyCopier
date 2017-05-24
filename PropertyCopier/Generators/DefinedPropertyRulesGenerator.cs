@@ -5,6 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using PropertyCopier.Data;
+using PropertyCopier.ExpressionVisitors;
 
 namespace PropertyCopier.Generators
 {
@@ -13,12 +15,16 @@ namespace PropertyCopier.Generators
     /// </summary>
     internal class DefinedPropertyRulesGenerator : IExpressionGenerator
     {
-        public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData)
+        public ExpressionGeneratorResult GenerateExpressions(
+            Expression sourceExpression,
+            ICollection<PropertyInfo> targetProperties,
+            MappingData mappingData,
+            IEqualityComparer<string> memberNameComparer)
         {
             var expressions = new List<PropertyAndExpression>();
             var matched = new List<PropertyInfo>();
           
-            foreach (var propertyRule in mappingData.PropertyLambdaExpressions)
+            foreach (var propertyRule in mappingData.PropertyExpressions)
             {
                 var predefined = GetPredefinedRules(propertyRule, sourceExpression);                
                 matched.Add(predefined.Property);
@@ -29,9 +35,11 @@ namespace PropertyCopier.Generators
             return new ExpressionGeneratorResult
             {
                 Expressions = expressions,
-                TargetProperties = newTargetProperties,
+                UnmappedTargetProperties = newTargetProperties,
             };
         }
+
+        public IEqualityComparer<string> MemberNameComparer { get; set; }
 
         private static PropertyAndExpression GetPredefinedRules(PropertyRule propertyLambdaExpression, Expression sourcExpression)
         {

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using PropertyCopier.Data;
 
 namespace PropertyCopier.Generators
 {
@@ -15,14 +16,17 @@ namespace PropertyCopier.Generators
     /// </summary>
     internal class SingleChildObjectGenerator : IExpressionGenerator
     {
-        public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties,
-            MappingData mappingData)
+        public ExpressionGeneratorResult GenerateExpressions(
+            Expression sourceExpression,
+            ICollection<PropertyInfo> targetProperties,
+            MappingData mappingData,
+            IEqualityComparer<string> memberNameComparer)
         {
             var expressions = new List<PropertyAndExpression>();
             var matched = new List<PropertyInfo>();            
 
             // Nested Child objects e.g. Foo.Owner = new OwnerDto { ID = bar.Owner.ID, Name = bar.Owner.Name }            
-            var nestedProperties = GetNestedPropertyMatches(mappingData.GetSourceProperties(), targetProperties);
+            var nestedProperties = GetNestedPropertyMatches(mappingData.GetSourceProperties(), targetProperties, memberNameComparer);
 
             foreach (var propertyMatch in nestedProperties)
             {
@@ -50,9 +54,11 @@ namespace PropertyCopier.Generators
             return new ExpressionGeneratorResult
             {
                 Expressions = expressions,
-                TargetProperties = newTargetProperties,
+                UnmappedTargetProperties = newTargetProperties,
             };
         }
+
+        public IEqualityComparer<string> MemberNameComparer { get; set; }
 
 
         /// <summary>
@@ -62,21 +68,25 @@ namespace PropertyCopier.Generators
         /// </summary>
         /// <param name="sourceProperties">The source properties.</param>
         /// <param name="targetProperties">The target properties.</param>
+        /// <param name="memberNameComparer"></param>
         /// <returns></returns>
-        private static IEnumerable<PropertyPair> GetNestedPropertyMatches(IEnumerable<PropertyInfo> sourceProperties, IEnumerable<PropertyInfo> targetProperties)
+        private static IEnumerable<PropertyPair> GetNestedPropertyMatches(
+            IEnumerable<PropertyInfo> sourceProperties,
+            IEnumerable<PropertyInfo> targetProperties,
+            IEqualityComparer<string> memberNameComparer)
         {
+            var matchedProperties =
+                TypeHelper.GetNameMatchedProperties(sourceProperties, targetProperties, memberNameComparer);
+
             var joinedObjects =
-                from sProperty in sourceProperties
-                join tProperty in targetProperties
-                on sProperty.Name.ToUpperInvariant() equals tProperty.Name.ToUpperInvariant()
-                where sProperty.PropertyType != typeof(string)
-                where tProperty.PropertyType != typeof(string)
-                where !sProperty.PropertyType.IsValueType
-                where !tProperty.PropertyType.IsValueType
-                where sProperty.CanRead
-                where tProperty.CanWrite
-                where tProperty.PropertyType.GetConstructor(Type.EmptyTypes) != null
-                select new PropertyPair { TargetProperty = tProperty, SourceProperty = sProperty };
+                from matchedProperty in matchedProperties                
+                where matchedProperty.SourceProperty.PropertyType != typeof(string)
+                where matchedProperty.TargetProperty.PropertyType != typeof(string)
+                where !matchedProperty.SourceProperty.PropertyType.IsValueType
+                where !matchedProperty.TargetProperty.PropertyType.IsValueType
+                where TypeHelper.GetIEnumerableImpl(matchedProperty.TargetProperty.PropertyType) == null
+                where matchedProperty.TargetProperty.PropertyType.GetConstructor(Type.EmptyTypes) != null
+                select matchedProperty;
             return joinedObjects;
         }
     }

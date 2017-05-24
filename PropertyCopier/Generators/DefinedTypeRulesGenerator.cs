@@ -5,6 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using PropertyCopier.Data;
+using PropertyCopier.ExpressionVisitors;
 
 namespace PropertyCopier.Generators
 {
@@ -14,11 +16,19 @@ namespace PropertyCopier.Generators
     /// </summary>
     internal class DefinedTypeRulesGenerator : IExpressionGenerator
     {
-        public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData)
+        public ExpressionGeneratorResult GenerateExpressions(
+            Expression sourceExpression,
+            ICollection<PropertyInfo> targetProperties,
+            MappingData mappingData,
+            IEqualityComparer<string> memberNameComparer)
         {
             var expressions = new List<PropertyAndExpression>();
             var matched = new List<PropertyInfo>();
-            var knownMappings = GetKnownTypeMappings(mappingData.GetSourceProperties(), targetProperties, mappingData.KnownMappings);
+            var knownMappings = GetKnownTypeMappings(
+                mappingData.GetSourceProperties(),
+                targetProperties,
+                mappingData.KnownMappings,
+                memberNameComparer);
 
             foreach (var knownMapping in knownMappings)
             {
@@ -33,16 +43,19 @@ namespace PropertyCopier.Generators
             return new ExpressionGeneratorResult
             {
                 Expressions = expressions,
-                TargetProperties = newTargetProperties,
+                UnmappedTargetProperties = newTargetProperties,
             };
         }
+
+        public IEqualityComparer<string> MemberNameComparer { get; set; }
 
         private static IEnumerable<DefinedMappingPropertyPair> GetKnownTypeMappings(
             IEnumerable<PropertyInfo> sourceProperties,
             IEnumerable<PropertyInfo> targetProperties,
-            IEnumerable<MappingData> mappingDataCollection)
+            IEnumerable<MappingData> mappingDataCollection,
+            IEqualityComparer<string> memberNameComparer)
         {
-            var matches = TypeHelper.GetNameMatchedProperties(sourceProperties, targetProperties);
+            var matches = TypeHelper.GetNameMatchedProperties(sourceProperties, targetProperties, memberNameComparer);
 
             var knownMappings =
                 from match in matches

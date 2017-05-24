@@ -2,9 +2,15 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace PropertyCopier
+namespace PropertyCopier.ExpressionVisitors
 {
-    public class AddPropertyRuleExpressionVisitor : ExpressionVisitor
+    /// <summary>
+    /// Replaces a parameter expression in a rule with the parameter for the source.
+    /// e.g. Given the rule x => x.Count * 2 and the parameter "source" will rewrite is to
+    /// x => source.Count * 2. The parameters part of the lambda are left unchanged as they
+    /// will be discarded.
+    /// </summary>
+    internal class AddPropertyRuleExpressionVisitor : ExpressionVisitor
     {
         private bool _firstCall = true;
         private readonly Expression _sourceParameter;        

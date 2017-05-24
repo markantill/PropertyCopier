@@ -1,7 +1,11 @@
+using System;
 using System.Reflection;
 
-namespace PropertyCopier
+namespace PropertyCopier.Data
 {
+    /// <summary>
+    /// Represents a pair of properties that are mapped to each other.
+    /// </summary>
     internal class PropertyPair
     {
         internal PropertyInfo TargetProperty { get; set; }
@@ -12,10 +16,5 @@ namespace PropertyCopier
         {
             return $"{{ TargetProperty = {TargetProperty}, SourceProperty = {SourceProperty} }}";
         }
-    }
-
-    internal class DefinedMappingPropertyPair : PropertyPair
-    {
-        public DefinedMapping DefinedMapping { get; set; }
     }
 }

@@ -85,7 +85,8 @@
   <ItemGroup>
     <Compile Include="CopyTests.cs" />
     <Compile Include="ExpressionBuilderTests.cs" />
-    <Compile Include="MapperTests.cs" />
+    <Compile Include="CopierTests.cs" />
+    <Compile Include="LegacyV1Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using PropertyCopier.Data;
 
 namespace PropertyCopier.Generators
 {
@@ -17,7 +18,8 @@ namespace PropertyCopier.Generators
         public ExpressionGeneratorResult GenerateExpressions(
             Expression sourceExpression,
             ICollection<PropertyInfo> targetProperties,
-            MappingData mappingData)
+            MappingData mappingData,
+            IEqualityComparer<string> memberNameComparer)
         {
             var expressions = new List<PropertyAndExpression>();
             var matched = new List<PropertyInfo>();
@@ -37,10 +39,10 @@ namespace PropertyCopier.Generators
             var newTargetProperties = targetProperties.Except(matched).ToArray();
             return new ExpressionGeneratorResult
             {
-                TargetProperties = newTargetProperties,
+                UnmappedTargetProperties = newTargetProperties,
                 Expressions = expressions,
             };
-        }
+        }        
 
         /// <summary>
         /// Get the properties of the source we can flatten out in the target
