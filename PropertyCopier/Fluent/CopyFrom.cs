@@ -36,7 +36,7 @@ namespace PropertyCopier.Fluent
         {
             if (_scalarOnly == true)
             {
-                _copier.SetMapping<TSource, TTarget>(true);
+                _copier.SetRules<TSource, TTarget>(true);
             }
 
             var result = _copier.Copy<TSource, TTarget>(_source);
@@ -69,7 +69,7 @@ namespace PropertyCopier.Fluent
 
             if (_scalarOnly == true)
             {
-                _copier.SetMapping<TSource, TTarget>(true);
+                _copier.SetRules<TSource, TTarget>(true);
             }
 
             var result = _copier.Copy(_source, target);

@@ -52,6 +52,16 @@ namespace PropertyCopier.Data
         }
 
         public abstract ICollection<MappingData> KnownMappings { get; }
+
+        public bool FlattenChildObjects { get; set; } = true;
+
+        public bool MapChildObjects { get; set; } = true;
+
+        public bool MapChildEnumerations { get; set; } = true;
+
+        public bool MapChildCollections { get; set; } = true;
+
+        public bool AddNullChecking { get; set; } = false;
     }
 
     /// <summary>

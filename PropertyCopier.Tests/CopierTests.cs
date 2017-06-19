@@ -34,7 +34,7 @@ namespace PropertyCopier.Tests
         public void CopyStringIgnoreNumber()
         {
             var copier = new Copier();
-            copier.IgnoreProperty<EntityOne, DtoOne>(e => e.ID);
+            copier.SetRules<EntityOne, DtoOne>().IgnoreProperty(e => e.ID);
             var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
             AreEqual(0, dto.ID);
             AreEqual("Test", dto.Name);
@@ -44,7 +44,7 @@ namespace PropertyCopier.Tests
         public void CopyStringCustomNumber()
         {
             var copier = new Copier();
-            copier.ForProperty<EntityOne, DtoOne>(t => t.ID, s => s.ID * 2);
+            copier.SetRules<EntityOne, DtoOne>().ForProperty(t => t.ID, s => s.ID * 2);
             var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
             AreEqual(20, dto.ID);
             AreEqual("Test", dto.Name);
@@ -54,7 +54,7 @@ namespace PropertyCopier.Tests
         public void AfterCopyOneAction()
         {
             var copier = new Copier();
-            copier.AfterCopy<EntityOne, DtoOne>((e, d) => d.ID = 100);
+            copier.SetRules<EntityOne, DtoOne>().AfterCopy((e, d) => d.ID = 100);
             var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
             AreEqual(100, dto.ID);
             AreEqual("Test", dto.Name);
@@ -64,8 +64,8 @@ namespace PropertyCopier.Tests
         public void AfterCopyTwoActions()
         {
             var copier = new Copier();
-            copier.AfterCopy<EntityOne, DtoOne>((e, d) => d.ID = 100);
-            copier.AfterCopy<EntityOne, DtoOne>((e, d) => d.Name = "100");
+            copier.SetRules<EntityOne, DtoOne>().AfterCopy((e, d) => d.ID = 100);
+            copier.SetRules<EntityOne, DtoOne>().AfterCopy((e, d) => d.Name = "100");
             var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
             AreEqual(100, dto.ID);
             AreEqual("100", dto.Name);
@@ -77,8 +77,8 @@ namespace PropertyCopier.Tests
             var copier1 = new Copier();
             var copier2 = new Copier();
 
-            copier1.IgnoreProperty<EntityOne, DtoOne>(t => t.ID);
-            copier2.IgnoreProperty<EntityOne, DtoOne>(t => t.Name);
+            copier1.SetRules<EntityOne, DtoOne>().IgnoreProperty(t => t.ID);
+            copier2.SetRules<EntityOne, DtoOne>().IgnoreProperty(t => t.Name);
 
             var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
             var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
@@ -96,8 +96,8 @@ namespace PropertyCopier.Tests
             var copier1 = new Copier();
             var copier2 = new Copier();
 
-            copier1.ForProperty<EntityOne, DtoOne>(t => t.ID, s => 100);
-            copier2.ForProperty<EntityOne, DtoOne>(t => t.Name, s => "100");
+            copier1.SetRules<EntityOne, DtoOne>().ForProperty(t => t.ID, s => 100);
+            copier2.SetRules<EntityOne, DtoOne>().ForProperty(t => t.Name, s => "100");
 
             var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
             var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
@@ -115,8 +115,8 @@ namespace PropertyCopier.Tests
             var copier1 = new Copier();
             var copier2 = new Copier();
 
-            copier1.AfterCopy<EntityOne, DtoOne>((s, t) => t.ID = 100);
-            copier2.AfterCopy<EntityOne, DtoOne>((s, t) => t.Name = "100");
+            copier1.SetRules<EntityOne, DtoOne>().AfterCopy((s, t) => t.ID = 100);
+            copier2.SetRules<EntityOne, DtoOne>().AfterCopy((s, t) => t.Name = "100");
 
             var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
             var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
@@ -151,7 +151,7 @@ namespace PropertyCopier.Tests
         {
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var copier = new Copier();
-            copier.IgnoreProperty<EntityOne, DtoOne>(t => t.ID);
+            copier.SetRules<EntityOne, DtoOne>().IgnoreProperty(t => t.ID);
             var results = sourceData.Select(copier.CopyExpression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
@@ -170,7 +170,7 @@ namespace PropertyCopier.Tests
         {
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var copier = new Copier();
-            copier.ForProperty<EntityOne, DtoOne>(t => t.ID, s => s.ID * 2);
+            copier.SetRules<EntityOne, DtoOne>().ForProperty(t => t.ID, s => s.ID * 2);
             var results = sourceData.Select(copier.CopyExpression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
@@ -188,7 +188,7 @@ namespace PropertyCopier.Tests
         public void PropertyDefinedMapping()
         {
             var copier = new Copier();
-            copier.SetMappingRule<DateTime, long>(s => s.Ticks);
+            copier.SetRules<DateTime, long>().SetMappingRule(s => s.Ticks);
             var date = new DateTime(1980, 1, 1);
 
             var dto = copier.Copy<EntityDateTime, DtoDateTicks>(new EntityDateTime {Id = 10, Name = "Type map test", Time = date});
@@ -289,13 +289,14 @@ namespace PropertyCopier.Tests
             }
         }
 
+#if NET45
         [Test]
         public void CopyListToIReadOnlyCollectionDifferentItemType()
         {
             var copier = new Copier();
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
-            var dto = copier.Copy<EntityChildListOne, EntityChildIReadOnlyCollection>(entity);
+            var dto = copier.From(entity).To<EntityChildIReadOnlyCollection>();
 
             var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
             foreach (var item in zip)
@@ -304,6 +305,7 @@ namespace PropertyCopier.Tests
                 AreEqual(item.FromEntity.Name, item.FromDto.Name);
             }
         }
+#endif  
 
         [Test]
         public void CopyListToISetDifferentItemType()
@@ -325,8 +327,8 @@ namespace PropertyCopier.Tests
         public void CopyWithAssignedNames()
         {
             var copier = new Copier();
-            copier.MapPropertyTo<EntityOne, EntityDifferentNames>(s => s.ID, t => t.Identity);
-            copier.MapPropertyTo<EntityOne, EntityDifferentNames>(s => s.Name, t => t.Description);
+            copier.SetRules<EntityOne, EntityDifferentNames>().MapPropertyTo(s => s.ID, t => t.Identity);
+            copier.SetRules<EntityOne, EntityDifferentNames>().MapPropertyTo(s => s.Name, t => t.Description);
             var result = copier.From(new EntityOne {ID = 50, Name = "Test"}).To<EntityDifferentNames>();
             AreEqual(50, result.Identity);
             AreEqual("Test", result.Description);
@@ -337,9 +339,10 @@ namespace PropertyCopier.Tests
         public void CopyWithAssignedNamesAndIgnore()
         {
             var copier = new Copier();
-            copier.MapPropertyTo<EntityOne, EntityDifferentNames>(s => s.ID, t => t.Identity);
-            copier.MapPropertyTo<EntityOne, EntityDifferentNames>(s => s.Name, t => t.Description);
-            copier.IgnoreProperty<EntityOne, EntityDifferentNames>(t => t.Name);
+            copier.SetRules<EntityOne, EntityDifferentNames>()
+                .MapPropertyTo(s => s.ID, t => t.Identity)
+                .MapPropertyTo(s => s.Name, t => t.Description)
+                .IgnoreProperty(t => t.Name);
             var result = copier.From(new EntityOne { ID = 50, Name = "Test" }).To<EntityDifferentNames>();
             AreEqual(50, result.Identity);
             AreEqual("Test", result.Description);
@@ -350,7 +353,7 @@ namespace PropertyCopier.Tests
         public void CopyWithNamesDiffernetCaseEnabled()
         {
             var copier = new Copier();
-            copier.SetMapping<EntityOne, EntityDifferentCase>(comparer: StringComparer.InvariantCultureIgnoreCase);
+            copier.SetRules<EntityOne, EntityDifferentCase>(comparer: StringComparer.InvariantCultureIgnoreCase);
             var result = copier.From(new EntityOne {ID = 10, Name = "Test"}).To<EntityDifferentCase>();
             AreEqual(10, result.id);
             AreEqual("Test", result.name);
@@ -361,10 +364,78 @@ namespace PropertyCopier.Tests
         public void CopyWithNamesDiffernetCaseDisabled()
         {
             var copier = new Copier();
-            copier.SetMapping<EntityOne, EntityDifferentCase>(comparer: StringComparer.InvariantCulture);
+            copier.SetRules<EntityOne, EntityDifferentCase>(comparer: StringComparer.InvariantCulture);
             var result = copier.From(new EntityOne { ID = 10, Name = "Test" }).To<EntityDifferentCase>();
             AreEqual(0, result.id);
             AreEqual(null, result.name);
+        }
+
+        [Test]        
+        public void CopyNumberAndStringNullChildPropertiesThrowsException()
+        {
+            var copier = new Copier();
+
+            Throws<NullReferenceException>(() =>
+            {
+                copier.From(new EnitiyTwo {ID = 10, Name = "Test", Child = null }).To<DtoTwo>();
+            });
+        }
+
+        [Test]
+        public void CopyNumberAndStringAndChildPropertiesNullChecking()
+        {
+            var copier = new Copier();
+            copier.SetRules<EnitiyTwo, DtoTwo>(addNullChecking: true);
+            var dto =
+                copier.From(
+                        new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } })
+                    .To<DtoTwo>();
+            AreEqual(10, dto.ID);
+            AreEqual("Test", dto.Name);
+            AreEqual(100, dto.ChildID);
+            AreEqual("Child", dto.ChildName);
+        }
+
+        [Test]
+        public void CopyNumberAndStringIgnoreChildProperties()
+        {
+            var copier = new Copier();
+            copier.SetRules<EnitiyTwo, DtoTwo>(flattenChildObjects: false);
+            var dto = copier.From(new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } }).To<DtoTwo>();
+
+            AreEqual(10, dto.ID);
+            AreEqual("Test", dto.Name);
+
+            AreEqual(0, dto.ChildID);
+            IsNull( dto.ChildName);
+        }
+
+        [Test]
+        public void CopyNumberAndStringAndChild()
+        {
+            var copier = new Copier();
+            var dto =
+                copier.From(
+                        new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } })
+                    .To<DtoThree>();
+            AreEqual(10, dto.ID);
+            AreEqual("Test", dto.Name);
+            AreEqual(100, dto.Child.ID);
+            AreEqual("Child", dto.Child.Name);
+        }
+
+        [Test]
+        public void CopyNumberAndStringIgnoreChild()
+        {
+            var copier = new Copier();
+            copier.SetRules<EnitiyTwo, DtoThree>(copyChildObjects: false);
+            var dto =
+                copier.From(
+                        new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } })
+                    .To<DtoThree>();
+            AreEqual(10, dto.ID);
+            AreEqual("Test", dto.Name);
+            IsNull(dto.Child);
         }
     }
 

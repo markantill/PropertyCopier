@@ -25,7 +25,11 @@ namespace PropertyCopier.Generators
         private readonly Type[] _linkedListTypes = { typeof(LinkedList<>) };
         private readonly Type[] _readOnlyCollectionTypes = { typeof(ReadOnlyCollection<>) };
 
-        public ExpressionGeneratorResult GenerateExpressions(Expression sourceExpression, ICollection<PropertyInfo> targetProperties, MappingData mappingData, IEqualityComparer<string> memberNameComparer)
+        public ExpressionGeneratorResult GenerateExpressions(
+            Expression sourceExpression,
+            ICollection<PropertyInfo> targetProperties,
+            MappingData mappingData,
+            IEqualityComparer<string> memberNameComparer)
         {
             var collectionTypes = 
                 _listTypes

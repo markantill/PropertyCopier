@@ -37,6 +37,16 @@ namespace PropertyCopier
         }
 
         /// <summary>
+        /// Checks if the object can be null accounting for <see cref="Nullable{T}"/>.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>True if type can be null, false otherwise.</returns>
+        internal static bool CanBeNull(this Type type)
+        {
+            return !type.IsValueType || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
+        }
+
+        /// <summary>
         /// Determines whether the specified object is scalar (value type or string).
         /// </summary>
         /// <param name="thing">The thing.</param>

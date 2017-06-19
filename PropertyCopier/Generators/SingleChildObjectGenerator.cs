@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using PropertyCopier.Data;
+using PropertyCopier.ExpressionVisitors;
 
 namespace PropertyCopier.Generators
 {
@@ -16,6 +17,8 @@ namespace PropertyCopier.Generators
     /// </summary>
     internal class SingleChildObjectGenerator : IExpressionGenerator
     {
+        private readonly NullSafeVisitor _nullSafeVisitor = new NullSafeVisitor();
+
         public ExpressionGeneratorResult GenerateExpressions(
             Expression sourceExpression,
             ICollection<PropertyInfo> targetProperties,
@@ -87,6 +90,7 @@ namespace PropertyCopier.Generators
                 where TypeHelper.GetIEnumerableImpl(matchedProperty.TargetProperty.PropertyType) == null
                 where matchedProperty.TargetProperty.PropertyType.GetConstructor(Type.EmptyTypes) != null
                 select matchedProperty;
+
             return joinedObjects;
         }
     }

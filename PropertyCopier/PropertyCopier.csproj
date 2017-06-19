@@ -52,6 +52,16 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>PropertyCopier.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug 4.0|AnyCPU'">
+    <OutputPath>bin\Debug 4.0\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <DefineConstants>DEBUG;TRACE;NET40</DefineConstants>
+    <Optimize>false</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -66,6 +76,7 @@
     <Compile Include="Copy.cs" />
     <Compile Include="Data\DefaultMappingData.cs" />
     <Compile Include="Data\DefinedMapping.cs" />
+    <Compile Include="ExpressionVisitors\NullSafeVisitor.cs" />
     <Compile Include="Extensions\MemberInfoExtensions.cs" />
     <Compile Include="Extensions\QueryableExtensions.cs" />
     <Compile Include="Fluent\CopyFrom.cs" />
@@ -74,6 +85,7 @@
     <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Data\PropertyRule.cs" />
     <Compile Include="Comparers\PropertyNameComparer.cs" />
+    <Compile Include="Fluent\SetRules.cs" />
     <Compile Include="StaticCaches\ExistingCopier.cs" />
     <Compile Include="ExpressionBuilder.cs" />
     <Compile Include="Generators\ChildCollectionGenerator.cs" />
