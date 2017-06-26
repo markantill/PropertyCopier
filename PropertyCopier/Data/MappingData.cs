@@ -12,7 +12,7 @@ namespace PropertyCopier.Data
     /// </summary>
     internal abstract class MappingData
     {
-        public bool ScalarOnly { get; set; }
+        public bool IgnoreComplexObjects { get; set; }
 
         public StringComparer Comparer { get; set; } = StringComparer.InvariantCultureIgnoreCase;
 
@@ -33,7 +33,7 @@ namespace PropertyCopier.Data
             var sourceProperties = SourceType.GetProperties()
                 .Where(p => p != null)
                 .Where(p => p.CanRead);
-            if (ScalarOnly)
+            if (IgnoreComplexObjects)
             {
                 sourceProperties =
                     sourceProperties.Where(p => p.PropertyType.IsValueType || p.PropertyType == typeof(string));

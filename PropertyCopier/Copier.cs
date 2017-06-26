@@ -11,7 +11,7 @@ namespace PropertyCopier
     /// <summary>
     /// Copies property values from one object to another.
     /// </summary>
-    public class Copier
+    public class Copier : ICopier
     {
         private readonly Dictionary<TypeMapping, MappingData> _mappings =
             new Dictionary<TypeMapping, MappingData>();      
@@ -50,10 +50,11 @@ namespace PropertyCopier
         /// </summary>
         /// <typeparam name="TSource">The source type.</typeparam>        
         /// <typeparam name="TTarget">The target type/</typeparam>
-        /// <param name="scalarOnly">If true only copy scalar properties, values types and strings. Default value is false.</param>
+        /// <param name="ignoreComplexObjects">If true only copy scalar properties, values types and strings. Default value is false.</param>
         /// <param name="comparer">The rules to use to compare names, the default is InvariantCultureIgnoreCase.</param>
-        public SetRules<TSource, TTarget> SetRules<TSource, TTarget>(
-            bool scalarOnly = false,            
+        /// <param name="flattenChildObjects">Turn source child object properties into flat target properties e.g. Child.ID into ChildID.</param>
+        /// <param name="copyChildObjects">Copy child object properties.</param>
+        public SetRules<TSource, TTarget> SetRules<TSource, TTarget>(                   
             bool flattenChildObjects = true,
             bool copyChildObjects = true,
             bool copyChildEnumerations = true,
@@ -62,8 +63,7 @@ namespace PropertyCopier
             StringComparer comparer = null)
             where TTarget : new()
         {
-            var mappingData = GetOrCreateMappingData<TSource, TTarget>();
-            mappingData.ScalarOnly = scalarOnly;
+            var mappingData = GetOrCreateMappingData<TSource, TTarget>();            
             mappingData.FlattenChildObjects = flattenChildObjects;
             mappingData.MapChildObjects = copyChildObjects;
             mappingData.MapChildEnumerations = copyChildEnumerations;
@@ -75,6 +75,26 @@ namespace PropertyCopier
             return result;
         }
 
+        internal SetRules<TSource, TTarget> SetRules<TSource, TTarget>(bool ignoreComplexObjects)          
+            where TTarget : new()
+        {
+            if (ignoreComplexObjects)
+            {
+                return SetRules<TSource, TTarget>(
+                    flattenChildObjects: true, 
+                    copyChildObjects: false,
+                    copyChildEnumerations: false,
+                    copyChildCollections: false,
+                    addNullChecking: false);
+            }
+
+            return SetRules<TSource, TTarget>(
+                flattenChildObjects: true,
+                copyChildObjects: true,
+                copyChildEnumerations: true,
+                copyChildCollections: true,
+                addNullChecking: false);
+        }
 
         internal TTarget Copy<TSource, TTarget>(TSource source)
             where TTarget : new()
@@ -110,7 +130,7 @@ namespace PropertyCopier
             return existingMappingData as MappingData<TSource, TTarget> ??
                    new MappingData<TSource, TTarget>
                    {
-                       ScalarOnly = false,
+                       IgnoreComplexObjects = false,
                        Mappings = _mappings,
                    };
         }

@@ -25,7 +25,7 @@ namespace PropertyCopier
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             
-            var result = new CopyFrom<TSource>(source, new Copier(), scalarOnly: false);
+            var result = new CopyFrom<TSource>(source, new Copier(), ignoreComplexObjects: false);
             return result;
         }
 
@@ -39,7 +39,7 @@ namespace PropertyCopier
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
-            var result = new CopyFrom<TSource>(source, new Copier(), scalarOnly: true);
+            var result = new CopyFrom<TSource>(source, new Copier(), ignoreComplexObjects: true);
             return result;
         }      
 

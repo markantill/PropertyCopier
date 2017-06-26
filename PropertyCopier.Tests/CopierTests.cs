@@ -13,75 +13,216 @@ namespace PropertyCopier.Tests
     [TestFixture]
     public class CopierTests
     {
-        [Test]
-        public void CopyNumber()
+        [Test(Description = "Copy property Byte to Int32", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyNumber(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var dto = copier.From(new EntityOne {ID = 10}).To<DtoOne>();
             AreEqual(10, dto.ID);
         }
 
-        [Test]
-        public void CopyNumberAndString()
+        [Test(Description = "Copy property Byte to Int32 and String to String", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyNumberAndString(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var dto = copier.From(new EntityOne {ID = 10, Name = "Test"}).To<DtoOne>();
             AreEqual(10, dto.ID);
             AreEqual("Test", dto.Name);
         }
 
-        [Test]
-        public void CopyStringIgnoreNumber()
+        [Test(Description = "Copy one property, ignore one property", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyStringIgnoreNumber(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             copier.SetRules<EntityOne, DtoOne>().IgnoreProperty(e => e.ID);
-            var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
+            var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
             AreEqual(0, dto.ID);
             AreEqual("Test", dto.Name);
         }
 
-        [Test]
-        public void CopyStringCustomNumber()
+        [Test(Description = "Copy one property, custom rule one property", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyStringCustomNumber(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             copier.SetRules<EntityOne, DtoOne>().ForProperty(t => t.ID, s => s.ID * 2);
-            var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
+            var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
             AreEqual(20, dto.ID);
             AreEqual("Test", dto.Name);
         }
 
-        [Test]
-        public void AfterCopyOneAction()
+        [Test(Description = "Copy two properties, one custom action", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void AfterCopyOneAction(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             copier.SetRules<EntityOne, DtoOne>().AfterCopy((e, d) => d.ID = 100);
             var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
             AreEqual(100, dto.ID);
             AreEqual("Test", dto.Name);
         }
 
-        [Test]
-        public void AfterCopyTwoActions()
+        [Test(Description = "Copy two properties, one custom action", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void AfterCopyTwoActions(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             copier.SetRules<EntityOne, DtoOne>().AfterCopy((e, d) => d.ID = 100);
             copier.SetRules<EntityOne, DtoOne>().AfterCopy((e, d) => d.Name = "100");
-            var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
+            var dto = copier.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
             AreEqual(100, dto.ID);
             AreEqual("100", dto.Name);
         }
 
-        [Test]
-        public void TwocopiersUseDifferentRulesIgnore()
+        [Test(Description = "Two copiers. different ignore rules", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void TwoCopiersUseDifferentRulesIgnore(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier1 = new Copier();
+            copier1.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var copier2 = new Copier();
+            copier2.SetRules<EntityOne, DtoOne>(
+
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
 
             copier1.SetRules<EntityOne, DtoOne>().IgnoreProperty(t => t.ID);
             copier2.SetRules<EntityOne, DtoOne>().IgnoreProperty(t => t.Name);
 
-            var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
-            var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
+            var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
+            var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
 
             AreEqual(0, dto1.ID);
             AreEqual("Test", dto1.Name);
@@ -90,17 +231,43 @@ namespace PropertyCopier.Tests
             AreEqual(null, dto2.Name);
         }
 
-        [Test]
-        public void TwocopiersUseDifferentRulesForProperty()
+        [Test(Description = "Two copiers. different custom rules", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void TwocopiersUseDifferentRulesForProperty(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier1 = new Copier();
+            copier1.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var copier2 = new Copier();
+            copier2.SetRules<EntityOne, DtoOne>(
+
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
 
             copier1.SetRules<EntityOne, DtoOne>().ForProperty(t => t.ID, s => 100);
             copier2.SetRules<EntityOne, DtoOne>().ForProperty(t => t.Name, s => "100");
 
-            var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
-            var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
+            var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
+            var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
 
             AreEqual(100, dto1.ID);
             AreEqual("Test", dto1.Name);
@@ -109,17 +276,42 @@ namespace PropertyCopier.Tests
             AreEqual("100", dto2.Name);
         }
 
-        [Test]
-        public void TwocopiersUseDifferentRulesForAfterCopy()
+        [Test(Description = "Two copiers. different after actions", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void TwocopiersUseDifferentRulesForAfterCopy(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier1 = new Copier();
+            copier1.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var copier2 = new Copier();
+            copier2.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
 
             copier1.SetRules<EntityOne, DtoOne>().AfterCopy((s, t) => t.ID = 100);
             copier2.SetRules<EntityOne, DtoOne>().AfterCopy((s, t) => t.Name = "100");
 
-            var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
-            var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne { ID = 10, Name = "Test" });
+            var dto1 = copier1.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
+            var dto2 = copier2.Copy<EntityOne, DtoOne>(new EntityOne {ID = 10, Name = "Test"});
 
             AreEqual(100, dto1.ID);
             AreEqual("Test", dto1.Name);
@@ -128,11 +320,30 @@ namespace PropertyCopier.Tests
             AreEqual("100", dto2.Name);
         }
 
-        [Test]
-        public void MappingInQuery()
-        {            
+        [Test(Description = "Expression works in query", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void MappingInQuery(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
+        {
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var copier = new Copier();
+            copier.SetRules<EntityOne, DtoOne>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var results = sourceData.Select(copier.CopyExpression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
@@ -146,12 +357,31 @@ namespace PropertyCopier.Tests
             AreEqual("Name10", last.Name);
         }
 
-        [Test]
-        public void MappingInQueryWithIgnore()
+        [Test(Description = "Expression with ignore works in query", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void MappingInQueryWithIgnore(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var copier = new Copier();
-            copier.SetRules<EntityOne, DtoOne>().IgnoreProperty(t => t.ID);
+            copier.SetRules<EntityOne, DtoOne>(
+                    flattenChildObjects,
+                    copyChildObjects,
+                    copyChildEnumerations,
+                    copyChildCollections,
+                    addNullChecking)
+                .IgnoreProperty(t => t.ID);
+
             var results = sourceData.Select(copier.CopyExpression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
@@ -165,12 +395,31 @@ namespace PropertyCopier.Tests
             AreEqual("Name10", last.Name);
         }
 
-        [Test]
-        public void MappingInQueryWithForProperty()
+        [Test(Description = "Expression with custom mapping works in query", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void MappingInQueryWithForProperty(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var sourceData = Builder<EntityOne>.CreateListOfSize(10).Build().AsQueryable();
             var copier = new Copier();
-            copier.SetRules<EntityOne, DtoOne>().ForProperty(t => t.ID, s => s.ID * 2);
+            copier.SetRules<EntityOne, DtoOne>(
+                    flattenChildObjects,
+                    copyChildObjects,
+                    copyChildEnumerations,
+                    copyChildCollections,
+                    addNullChecking)
+                .ForProperty(t => t.ID, s => s.ID * 2);
+
             var results = sourceData.Select(copier.CopyExpression<EntityOne, DtoOne>()).ToList();
 
             AreEqual(10, results.Count);
@@ -184,23 +433,63 @@ namespace PropertyCopier.Tests
             AreEqual("Name10", last.Name);
         }
 
-        [Test]
-        public void PropertyDefinedMapping()
+        [Test(Description = "Copy uses custom rules for child properties", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void PropertyDefinedMapping(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityDateTime, DtoDateTicks>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             copier.SetRules<DateTime, long>().SetMappingRule(s => s.Ticks);
             var date = new DateTime(1980, 1, 1);
 
-            var dto = copier.Copy<EntityDateTime, DtoDateTicks>(new EntityDateTime {Id = 10, Name = "Type map test", Time = date});
+            var dto =
+                copier.Copy<EntityDateTime, DtoDateTicks>(
+                    new EntityDateTime {Id = 10, Name = "Type map test", Time = date});
             AreEqual(10, dto.Id);
             AreEqual("Type map test", dto.Name);
             AreEqual(date.Ticks, dto.Time);
         }
 
-        [Test]
-        public void PropertiesCopiedToStuct()
+        [Test(Description = "Copy works with target stuct", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void PropertiesCopiedToStuct(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityDateTime, DtoOneStruct>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var dto =
                 copier.Copy<EntityDateTime, DtoOneStruct>(
                     new EntityDateTime {Id = 10, Name = "Test", Time = new DateTime(1980, 1, 1)});
@@ -209,126 +498,332 @@ namespace PropertyCopier.Tests
             AreEqual(new DateTime(1980, 1, 1), dto.Time);
         }
 
-        [Test]
-        public void CopyListToListSameItemType()
+        [Test(Description = "Copy list property to target list property with same item types", TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToListSameItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildListTwo>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.Copy<EntityChildListOne, EntityChildListTwo>(entity);
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
             }
+            else
+            {
+                IsNull(dto.Children);
+            }
+
         }
 
-        [Test]
-        public void CopyListToListDifferentItemType()
+        [Test(Description = "Copy list property to target list property with different item types",
+            TestOf = typeof(Copier))]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToListDifferentItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildListThree>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.Copy<EntityChildListOne, EntityChildListThree>(entity);
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
+            }
+            else
+            {
+                IsNull(dto.Children);
             }
         }
 
         [Test]
-        public void CopyListToICollectionDifferentItemType()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToICollectionDifferentItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildICollection>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.Copy<EntityChildListOne, EntityChildICollection>(entity);
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
+            }
+            else
+            {
+                IsNull(dto.Children);
             }
         }
 
         [Test]
-        public void CopyListToLinkedListDifferentItemType()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToLinkedListDifferentItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildLinkedList>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.Copy<EntityChildListOne, EntityChildLinkedList>(entity);
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
+            }
+            else
+            {
+                IsNull(dto.Children);
             }
         }
 
         [Test]
-        public void CopyListToReadOnlyCollectionDifferentItemType()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToReadOnlyCollectionDifferentItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildReadOnlyCollection>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.From(entity).To<EntityChildReadOnlyCollection>();
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
+            }
+            else
+            {
+                IsNull(dto.Children);
             }
         }
 
 #if NET45
+
         [Test]
-        public void CopyListToIReadOnlyCollectionDifferentItemType()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToIReadOnlyCollectionDifferentItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildIReadOnlyCollection>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.From(entity).To<EntityChildIReadOnlyCollection>();
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
+            }
+            else
+            {
+                IsNull(dto.Children);
             }
         }
-#endif  
+
+#endif
 
         [Test]
-        public void CopyListToISetDifferentItemType()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyListToISetDifferentItemType(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityChildListOne, EntityChildISet>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             var entity = new EntityChildListOne();
             entity.Children = Builder<EntityOne>.CreateListOfSize(10).Build().ToList();
             var dto = copier.Copy<EntityChildListOne, EntityChildISet>(entity);
 
-            var zip = dto.Children.Zip(entity.Children, (x, y) => new { FromDto = x, FromEntity = y });
-            foreach (var item in zip)
+            if (copyChildCollections)
             {
-                AreEqual(item.FromEntity.ID, item.FromDto.ID);
-                AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                var zip = dto.Children.Zip(entity.Children, (x, y) => new {FromDto = x, FromEntity = y});
+                foreach (var item in zip)
+                {
+                    AreEqual(item.FromEntity.ID, item.FromDto.ID);
+                    AreEqual(item.FromEntity.Name, item.FromDto.Name);
+                }
+            }
+            else
+            {
+                IsNull(dto.Children);
             }
         }
 
         [Test]
-        public void CopyWithAssignedNames()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyWithAssignedNames(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
-            copier.SetRules<EntityOne, EntityDifferentNames>().MapPropertyTo(s => s.ID, t => t.Identity);
-            copier.SetRules<EntityOne, EntityDifferentNames>().MapPropertyTo(s => s.Name, t => t.Description);
+
+            copier.SetRules<EntityOne, EntityDifferentNames>(
+                    flattenChildObjects,
+                    copyChildObjects,
+                    copyChildEnumerations,
+                    copyChildCollections,
+                    addNullChecking)
+                .MapPropertyTo(s => s.ID, t => t.Identity)
+                .MapPropertyTo(s => s.Name, t => t.Description);
+
             var result = copier.From(new EntityOne {ID = 50, Name = "Test"}).To<EntityDifferentNames>();
             AreEqual(50, result.Identity);
             AreEqual("Test", result.Description);
@@ -336,24 +831,62 @@ namespace PropertyCopier.Tests
         }
 
         [Test]
-        public void CopyWithAssignedNamesAndIgnore()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyWithAssignedNamesAndIgnore(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
-            copier.SetRules<EntityOne, EntityDifferentNames>()
+
+            copier.SetRules<EntityOne, EntityDifferentNames>(
+                    flattenChildObjects,
+                    copyChildObjects,
+                    copyChildEnumerations,
+                    copyChildCollections,
+                    addNullChecking)
                 .MapPropertyTo(s => s.ID, t => t.Identity)
                 .MapPropertyTo(s => s.Name, t => t.Description)
                 .IgnoreProperty(t => t.Name);
-            var result = copier.From(new EntityOne { ID = 50, Name = "Test" }).To<EntityDifferentNames>();
+
+            var result = copier.From(new EntityOne {ID = 50, Name = "Test"}).To<EntityDifferentNames>();
             AreEqual(50, result.Identity);
             AreEqual("Test", result.Description);
             IsNull(result.Name);
         }
 
         [Test]
-        public void CopyWithNamesDiffernetCaseEnabled()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyWithNamesDiffernetCaseEnabled(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
-            copier.SetRules<EntityOne, EntityDifferentCase>(comparer: StringComparer.InvariantCultureIgnoreCase);
+            copier.SetRules<EntityOne, EntityDifferentCase>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking,
+                StringComparer.InvariantCultureIgnoreCase);
+
             var result = copier.From(new EntityOne {ID = 10, Name = "Test"}).To<EntityDifferentCase>();
             AreEqual(10, result.id);
             AreEqual("Test", result.name);
@@ -361,34 +894,88 @@ namespace PropertyCopier.Tests
 
 
         [Test]
-        public void CopyWithNamesDiffernetCaseDisabled()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyWithNamesDiffernetCaseDisabled(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
-            copier.SetRules<EntityOne, EntityDifferentCase>(comparer: StringComparer.InvariantCulture);
-            var result = copier.From(new EntityOne { ID = 10, Name = "Test" }).To<EntityDifferentCase>();
+            copier.SetRules<EntityOne, EntityDifferentCase>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking,
+                comparer: StringComparer.InvariantCulture);
+
+            var result = copier.From(new EntityOne {ID = 10, Name = "Test"}).To<EntityDifferentCase>();
             AreEqual(0, result.id);
             AreEqual(null, result.name);
         }
 
-        [Test]        
-        public void CopyNumberAndStringNullChildPropertiesThrowsException()
+        [Test]
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(true, true, true, true, false, Description = "All other options true")]        
+        public void CopyNumberAndStringNullChildPropertiesThrowsException(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, EnitiyTwo>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
 
             Throws<NullReferenceException>(() =>
             {
-                copier.From(new EnitiyTwo {ID = 10, Name = "Test", Child = null }).To<DtoTwo>();
+                copier.From(new EnitiyTwo {ID = 10, Name = "Test", Child = null}).To<DtoTwo>();
             });
         }
 
         [Test]
-        public void CopyNumberAndStringAndChildPropertiesNullChecking()
+        [TestCase(false, false, false, false, true, Description = "All other options false")]
+        [TestCase(true, false, false, false, true, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, true, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, true, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, true, Description = "copyChildCollections")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyNumberAndStringAndChildPropertiesNullChecking(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
+            copier.SetRules<EntityOne, EnitiyTwo>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
             copier.SetRules<EnitiyTwo, DtoTwo>(addNullChecking: true);
             var dto =
                 copier.From(
-                        new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } })
+                        new EnitiyTwo {ID = 10, Name = "Test", Child = new ChildEntityOne {ID = 100, Name = "Child"}})
                     .To<DtoTwo>();
             AreEqual(10, dto.ID);
             AreEqual("Test", dto.Name);
@@ -397,47 +984,94 @@ namespace PropertyCopier.Tests
         }
 
         [Test]
-        public void CopyNumberAndStringIgnoreChildProperties()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyNumberAndStringFlattenChildProperties(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
-            copier.SetRules<EnitiyTwo, DtoTwo>(flattenChildObjects: false);
-            var dto = copier.From(new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } }).To<DtoTwo>();
+            copier.SetRules<EnitiyTwo, DtoTwo>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
+
+            var dto = copier.From(new EnitiyTwo
+                {
+                    ID = 10,
+                    Name = "Test",
+                    Child = new ChildEntityOne {ID = 100, Name = "Child"}
+                })
+                .To<DtoTwo>();
 
             AreEqual(10, dto.ID);
             AreEqual("Test", dto.Name);
 
-            AreEqual(0, dto.ChildID);
-            IsNull( dto.ChildName);
+            if (flattenChildObjects)
+            {
+                AreEqual(100, dto.ChildID);
+                AreEqual("Child", dto.ChildName);
+            }
+            else
+            {
+                AreEqual(0, dto.ChildID);
+                IsNull(dto.ChildName);
+            }
         }
 
         [Test]
-        public void CopyNumberAndStringAndChild()
+        [TestCase(false, false, false, false, false, Description = "All options false")]
+        [TestCase(true, false, false, false, false, Description = "flattenChildObjects")]
+        [TestCase(false, true, false, false, false, Description = "copyChildObjects")]
+        [TestCase(false, false, true, false, false, Description = "copyChildEnumerations")]
+        [TestCase(false, false, false, true, false, Description = "copyChildCollections")]
+        [TestCase(false, false, false, false, true, Description = "addNullChecking")]
+        [TestCase(true, true, true, true, true, Description = "All options true")]
+        public void CopyNumberAndStringAndChild(
+            bool flattenChildObjects,
+            bool copyChildObjects,
+            bool copyChildEnumerations,
+            bool copyChildCollections,
+            bool addNullChecking)
         {
             var copier = new Copier();
-            var dto =
-                copier.From(
-                        new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } })
-                    .To<DtoThree>();
-            AreEqual(10, dto.ID);
-            AreEqual("Test", dto.Name);
-            AreEqual(100, dto.Child.ID);
-            AreEqual("Child", dto.Child.Name);
-        }
+            copier.SetRules<EnitiyTwo, DtoThree>(
+                flattenChildObjects,
+                copyChildObjects,
+                copyChildEnumerations,
+                copyChildCollections,
+                addNullChecking);
 
-        [Test]
-        public void CopyNumberAndStringIgnoreChild()
-        {
-            var copier = new Copier();
-            copier.SetRules<EnitiyTwo, DtoThree>(copyChildObjects: false);
             var dto =
                 copier.From(
-                        new EnitiyTwo { ID = 10, Name = "Test", Child = new ChildEntityOne { ID = 100, Name = "Child" } })
+                        new EnitiyTwo {ID = 10, Name = "Test", Child = new ChildEntityOne {ID = 100, Name = "Child"}})
                     .To<DtoThree>();
             AreEqual(10, dto.ID);
             AreEqual("Test", dto.Name);
-            IsNull(dto.Child);
+
+            if (copyChildObjects)
+            {
+                AreEqual(100, dto.Child.ID);
+                AreEqual("Child", dto.Child.Name);
+            }
+            else
+            {
+                IsNull(dto.Child);
+            }
         }
     }
+
+    #region Test Classes
 
     public class EntityDifferentNames
     {
@@ -537,5 +1171,7 @@ namespace PropertyCopier.Tests
 
         public ReadOnlyCollection<DtoOne> Children { get; set; }
     }
+
+    #endregion Test Classes
 }
 

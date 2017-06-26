@@ -58,6 +58,7 @@ namespace PropertyCopier.Generators
             var matches =
                 from match in TypeHelper.GetNameMatchedProperties(sourceProperties, targetProperties, memberNameComparer)
                 where match.SourceProperty.PropertyType.IsCastableTo(match.TargetProperty.PropertyType)
+                where match.TargetProperty.PropertyType.IsValueType || match.TargetProperty.PropertyType == typeof(string)
                 select match;
 
             return matches;

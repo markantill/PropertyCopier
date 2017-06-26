@@ -60,11 +60,11 @@ namespace PropertyCopier
             var copyExpression = Lambda(initializer, sourceParameter);
 
 
-            if (mappingData.AddNullChecking)
-            {
-                var visitor = new NullSafeVisitor();
-                copyExpression = (LambdaExpression)visitor.Visit(copyExpression);
-            }
+            //if (mappingData.AddNullChecking)
+            //{
+            //    var visitor = new NullSafeVisitor();
+            //    copyExpression = (LambdaExpression)visitor.Visit(copyExpression);
+            //}
 
             return copyExpression;
         }

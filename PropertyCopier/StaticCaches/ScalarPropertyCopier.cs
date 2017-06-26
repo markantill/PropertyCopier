@@ -17,7 +17,7 @@ namespace PropertyCopier.StaticCaches
 	    private static readonly Lazy<Func<TSource, TTarget>> Copier = new Lazy<Func<TSource, TTarget>>(
 	        () => ExpressionBuilder
 	            .CreateLambdaInitializer<TSource, TTarget>(
-                    new MappingData<TSource, TTarget> { ScalarOnly = true })
+                    new MappingData<TSource, TTarget> { IgnoreComplexObjects = true })
 	            .Compile(),
 	        true);
 

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
+using PropertyCopier.Comparers;
 using PropertyCopier.Data;
 
 namespace PropertyCopier
@@ -44,17 +45,6 @@ namespace PropertyCopier
         internal static bool CanBeNull(this Type type)
         {
             return !type.IsValueType || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
-        }
-
-        /// <summary>
-        /// Determines whether the specified object is scalar (value type or string).
-        /// </summary>
-        /// <param name="thing">The thing.</param>
-        /// <returns>True if scalar, false otherwise.</returns>
-        internal static bool IsScalar(object thing)
-        {
-            var type = thing.GetType();
-            return type.IsValueType || type == typeof(string);
         }
 
         /// <summary>
@@ -187,24 +177,6 @@ namespace PropertyCopier
         {
             var underlyingType = property.PropertyType.ImplementsGenericInterface(typeof(IEnumerable<>));
             return underlyingType;
-        }
-
-        /// <summary>
-        /// Changes the type.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="targetType">Type of the target.</param>
-        /// <returns></returns>
-        internal static object ChangeType(object value, Type targetType)
-        {
-            object result = null;
-            if (value != null)
-            {
-                Type t = Nullable.GetUnderlyingType(targetType) ?? targetType;
-                result = Convert.ChangeType(value, t);
-            }
-
-            return result;
         }
 
         /// <summary>
@@ -388,9 +360,12 @@ namespace PropertyCopier
             comparer = comparer ?? new DefaultStringComparer();
 
             var matches =
-                sourceProperties.Where(s => s.CanRead)
-                    .Join(targetProperties.Where(t => t.CanWrite), s => s.Name, t => t.Name,
-                        (s, t) => new PropertyPair {TargetProperty = t, SourceProperty = s}, comparer);
+                sourceProperties
+                .Where(s => s.CanRead)
+                .Join(targetProperties.Where(t => t.CanWrite), 
+                    s => s.Name, 
+                    t => t.Name,
+                    (s, t) => new PropertyPair { TargetProperty = t, SourceProperty = s }, comparer);
            
             return matches;
         }
@@ -405,19 +380,6 @@ namespace PropertyCopier
                 throw new ArgumentException(
                     $"Property {sourceProperty.PropertyType.FullName} {sourceProperty.PropertyType.Name} {sourceProperty.Name} type cannot be mapped to: {targetProperty.PropertyType.FullName} {targetProperty.PropertyType.Name} {targetProperty.Name}");
             }
-        }
-    }
-
-    internal class DefaultStringComparer : IEqualityComparer<string>
-    {
-        public bool Equals(string x, string y)
-        {
-            return string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        public int GetHashCode(string obj)
-        {
-            return obj.ToUpperInvariant().GetHashCode();
         }
     }
 }

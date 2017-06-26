@@ -76,6 +76,7 @@
     <Compile Include="Copy.cs" />
     <Compile Include="Data\DefaultMappingData.cs" />
     <Compile Include="Data\DefinedMapping.cs" />
+    <Compile Include="Comparers\DefaultStringComparer.cs" />
     <Compile Include="ExpressionVisitors\NullSafeVisitor.cs" />
     <Compile Include="Extensions\MemberInfoExtensions.cs" />
     <Compile Include="Extensions\QueryableExtensions.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="Data\PropertyRule.cs" />
     <Compile Include="Comparers\PropertyNameComparer.cs" />
     <Compile Include="Fluent\SetRules.cs" />
+    <Compile Include="ICopier.cs" />
     <Compile Include="StaticCaches\ExistingCopier.cs" />
     <Compile Include="ExpressionBuilder.cs" />
     <Compile Include="Generators\ChildCollectionGenerator.cs" />

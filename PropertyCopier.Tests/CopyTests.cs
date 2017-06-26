@@ -14,8 +14,8 @@ namespace PropertyCopier.Tests
 
         [Test]
         public void CopyNumber()
-        {
-            var dto = Copy.From(new EntityOne() { ID = 10 }).To<DtoOne>();
+        {            
+            var dto = Copy.From(new EntityOne { ID = 10 }).To<DtoOne>();
             Assert.AreEqual(10, dto.ID);
         }
 

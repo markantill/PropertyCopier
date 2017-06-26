@@ -9,22 +9,22 @@ namespace PropertyCopier.Fluent
     public class CopyFrom<TSource>        
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="From{TSource}"/> class.
+        /// Initializes a new instance of the <see cref="CopyFrom{TSource}"/> class.
         /// </summary>
         /// <param name="source">The input.</param>
         /// <param name="copier">The copier.</param>
-        /// <param name="scalarOnly"></param>
-        internal CopyFrom(TSource source, Copier copier, bool? scalarOnly = null)
+        /// <param name="ignoreComplexObjects"></param>
+        internal CopyFrom(TSource source, Copier copier, bool? ignoreComplexObjects = null)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));            
             _source = source;
             _copier = copier;
-            _scalarOnly = scalarOnly;
+            _ignoreComplexObjects = ignoreComplexObjects;
         }        
         
         private readonly TSource _source;
         private readonly Copier _copier;
-        private readonly bool? _scalarOnly;
+        private readonly bool? _ignoreComplexObjects;
 
         /// <summary>
         /// Copy to the specified type.
@@ -34,9 +34,9 @@ namespace PropertyCopier.Fluent
         public TTarget To<TTarget>()
             where TTarget : new()
         {
-            if (_scalarOnly == true)
+            if (_ignoreComplexObjects == true)
             {
-                _copier.SetRules<TSource, TTarget>(true);
+                _copier.SetRules<TSource, TTarget>(ignoreComplexObjects: true);
             }
 
             var result = _copier.Copy<TSource, TTarget>(_source);
@@ -67,9 +67,9 @@ namespace PropertyCopier.Fluent
         {
             if (target == null) throw new ArgumentNullException(nameof(target));
 
-            if (_scalarOnly == true)
+            if (_ignoreComplexObjects == true)
             {
-                _copier.SetRules<TSource, TTarget>(true);
+                _copier.SetRules<TSource, TTarget>(ignoreComplexObjects: true);
             }
 
             var result = _copier.Copy(_source, target);
