@@ -7,7 +7,7 @@
 		<Authors>Mark Antill</Authors>
 		<Company>Mark AntillMark Antill</Company>
 		<Product>PropertyCopier</Product>
-		<PackageLicenseExpression>BSD</PackageLicenseExpression>
+		<PackageLicenseExpression></PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/markantill/PropertyCopier</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/markantill/PropertyCopier</RepositoryUrl>
 		<RepositoryType>GIT</RepositoryType>
@@ -16,6 +16,10 @@
 		<SignAssembly>false</SignAssembly>
 		<AssemblyOriginatorKeyFile>PropertyCopier.snk</AssemblyOriginatorKeyFile>
 		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+		<AssemblyVersion>2.1.0.0</AssemblyVersion>
+		<FileVersion>2.1.0.0</FileVersion>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<!-- .NET Standard 2.0 references, compilation flags and build options -->
@@ -44,6 +48,12 @@
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="..\LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath></PackagePath>
+	  </None>
 	</ItemGroup>
 	<PropertyGroup Condition=" '$(TargetFramework)' == 'net45'">
 		<DefineConstants>NET45</DefineConstants>
