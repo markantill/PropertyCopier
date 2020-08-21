@@ -13,7 +13,7 @@
 		<RepositoryType>GIT</RepositoryType>
 		<Copyright>Copyright © Mark Antill 2015</Copyright>
 		<Description>Copy object properties</Description>
-		<SignAssembly>true</SignAssembly>
+		<SignAssembly>false</SignAssembly>
 		<AssemblyOriginatorKeyFile>PropertyCopier.snk</AssemblyOriginatorKeyFile>
 		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
 	</PropertyGroup>
