@@ -55,7 +55,7 @@ namespace PropertyCopier.Generators
         /// <param name="sourceProperties">The source properties.</param>
         /// <param name="targetProperties">The target properties.</param>
         /// <returns></returns>
-        private static IEnumerable<PropertyPair> GetChidEnumerations(
+        private IEnumerable<PropertyPair> GetChidEnumerations(
             ICollection<PropertyInfo> sourceProperties,
             ICollection<PropertyInfo> targetProperties,
             IEqualityComparer<string> memberNameComparer)

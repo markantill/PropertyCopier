@@ -30,8 +30,6 @@ namespace PropertyCopier.Fluent
         public IEnumerable<TTarget> To<TTarget>(Copier copier)
             where TTarget : class, new()
         {
-            if (copier == null) throw new ArgumentNullException(nameof(copier));
-
             var result = _enumeration.Select(copier.Copy<TSource, TTarget>);
             return result;
         }

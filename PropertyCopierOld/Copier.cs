@@ -99,9 +99,6 @@ namespace PropertyCopier
             Expression<Func<TSource, object>> mappingFunction)             
             where TTarget : new()
         {
-            if (targetProperty == null) throw new ArgumentNullException(nameof(targetProperty));
-            if (mappingFunction == null) throw new ArgumentNullException(nameof(mappingFunction));
-
             var mappingData = GetOrCreateMappingData<TSource, TTarget>();
             var property = GetMemberInfo(targetProperty);
             var targetType = property.GetReturnType();
@@ -134,9 +131,6 @@ namespace PropertyCopier
         public void MapPropertyTo<TSource, TTarget>(Expression<Func<TSource, object>> sourceProperty, Expression<Func<TTarget, object>> targetProperty) 
             where TTarget : new()
         {
-            if (sourceProperty == null) throw new ArgumentNullException(nameof(sourceProperty));
-            if (targetProperty == null) throw new ArgumentNullException(nameof(targetProperty));
-
             var mappingData = GetOrCreateMappingData<TSource, TTarget>();
             var sourceMember = GetMemberInfo(sourceProperty);
             var sourceType = sourceMember.GetReturnType();

@@ -51,8 +51,6 @@ namespace PropertyCopier.Fluent
         public TTarget To<TTarget>(Action<TTarget> afterCreationDo)
             where TTarget : class, new()
         {
-            if (afterCreationDo == null) throw new ArgumentNullException(nameof(afterCreationDo));
-
             var result = To<TTarget>();
             afterCreationDo(result);
             return result;

@@ -40,6 +40,7 @@ namespace PropertyCopier.Generators
                 var newMappingData = mappingData.GetMappingFor(sourcePropertyType, targetPropertyType);
 
                 var exp = ExpressionBuilder.CreateLambdaInitializerBody(
+                    sourcePropertyType,
                     targetPropertyType,
                     propExpression,
                     newMappingData);

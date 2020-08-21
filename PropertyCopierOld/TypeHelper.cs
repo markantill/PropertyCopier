@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.Contracts;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using PropertyCopier.Data;
@@ -192,7 +191,7 @@ namespace PropertyCopier
             if (value != null)
             {
                 Type t = Nullable.GetUnderlyingType(targetType) ?? targetType;
-                result = Convert.ChangeType(value, t, CultureInfo.InvariantCulture);
+                result = Convert.ChangeType(value, t);
             }
 
             return result;

@@ -30,6 +30,8 @@ namespace PropertyCopier.Fluent
         public IQueryable<TTarget> To<TTarget>(Copier copier)
             where TTarget : class, new()
         {
+            if (copier == null) throw new ArgumentNullException(nameof(copier));
+
             var result = _queryable.Select(copier.CopyExpression<TSource, TTarget>());
             return result;
         }

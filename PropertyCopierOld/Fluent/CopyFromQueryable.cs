@@ -8,17 +8,17 @@ namespace PropertyCopier.Fluent
     /// Copy generic enumeration contents.
     /// </summary>
     /// <typeparam name="TSource">Generic type of enumeration to copy.</typeparam>
-    public class CopyFromEnumerable<TSource>        
+    public class CopyFromQueryable<TSource>        
     {
-        private readonly IEnumerable<TSource> _enumeration;        
+        private readonly IQueryable<TSource> _queryable;        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CopyFromEnumerable{TSource}" /> class.
         /// </summary>
-        /// <param name="enumeration">The enumeration.</param>
-        internal CopyFromEnumerable(IEnumerable<TSource> enumeration)
+        /// <param name="queryable">The enumeration.</param>
+        internal CopyFromQueryable(IQueryable<TSource> queryable)
         {
-            _enumeration = enumeration;
+            _queryable = queryable;
         }
 
         /// <summary>
@@ -27,12 +27,10 @@ namespace PropertyCopier.Fluent
         /// <typeparam name="TTarget">The type of the target.</typeparam>
         /// <param name="copier">The copier to use.</param>
         /// <returns>Enumeration of copied objects.</returns>
-        public IEnumerable<TTarget> To<TTarget>(Copier copier)
+        public IQueryable<TTarget> To<TTarget>(Copier copier)
             where TTarget : class, new()
         {
-            if (copier == null) throw new ArgumentNullException(nameof(copier));
-
-            var result = _enumeration.Select(copier.Copy<TSource, TTarget>);
+            var result = _queryable.Select(copier.CopyExpression<TSource, TTarget>());
             return result;
         }
 
@@ -41,22 +39,10 @@ namespace PropertyCopier.Fluent
         /// </summary>
         /// <typeparam name="TTarget">The type of the target.</typeparam>
         /// <returns>Enumeration of copied objects.</returns>
-        public IEnumerable<TTarget> To<TTarget>()
+        public IQueryable<TTarget> To<TTarget>()
             where TTarget : class, new()
         {
             return To<TTarget>(new Copier());
-        }
-
-        /// <summary>
-        /// Create new enumeration copied objects.
-        /// </summary>
-        /// <typeparam name="TTarget">The type of the target.</typeparam>
-        /// <returns>Enumeration of copied objects.</returns>
-        [Obsolete("Use To", false)]
-        public IEnumerable<TTarget> ToNew<TTarget>()
-            where TTarget : class, new()
-        {
-            return To<TTarget>();
         }
     }
 }

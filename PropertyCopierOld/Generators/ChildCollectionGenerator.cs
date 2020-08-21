@@ -16,10 +16,10 @@ namespace PropertyCopier.Generators
     /// </summary>
     internal class ChildCollectionGenerator : IExpressionGenerator
     {
-#if NET40
+#if NET45
+        private readonly Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(IReadOnlyList<>), typeof(ICollection<>), typeof(IReadOnlyCollection<>) };        
+#elif NET40
         private readonly Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(ICollection<>) };        
-#else
-        private readonly Type[] _listTypes = { typeof(List<>), typeof(IList<>), typeof(IReadOnlyList<>), typeof(ICollection<>), typeof(IReadOnlyCollection<>) };
 #endif
         private readonly Type[] _hashSetTypes = { typeof(HashSet<>), typeof(ISet<>) };
         private readonly Type[] _linkedListTypes = { typeof(LinkedList<>) };
@@ -102,7 +102,7 @@ namespace PropertyCopier.Generators
             return result;
         }
 
-        private static Expression CreateConstructorTakesIEnumerable(Type targetType, Type itemType, Expression sourceExpression)
+        private Expression CreateConstructorTakesIEnumerable(Type targetType, Type itemType, Expression sourceExpression)
         {
             var inputType = typeof(IEnumerable<>).MakeGenericType(itemType);
             var collectionType = targetType.MakeGenericType(itemType);

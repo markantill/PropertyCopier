@@ -19,8 +19,6 @@ namespace PropertyCopier.Extensions
         /// <returns>The <see cref="Type"/> returned.</returns>
         public static Type GetReturnType(this MemberInfo memberInfo)
         {
-            if (memberInfo == null) throw new ArgumentNullException(nameof(memberInfo));
-
             switch (memberInfo.MemberType)
             {
                 case MemberTypes.Constructor:
@@ -38,7 +36,7 @@ namespace PropertyCopier.Extensions
                     return ((TypeInfo)memberInfo).DeclaringType;
 #endif              
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(memberInfo));
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }

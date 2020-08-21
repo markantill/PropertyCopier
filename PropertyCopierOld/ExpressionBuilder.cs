@@ -52,7 +52,7 @@ namespace PropertyCopier
             // source => new Foo { Property1 = bar.Property1, Property2 = bar.Property2 }
             var sourceParameter = Expression.Parameter(source, nameof(source));
 
-            var initializer = CreateLambdaInitializerBody(target, sourceParameter, mappingData);
+            var initializer = CreateLambdaInitializerBody(source, target, sourceParameter, mappingData);
 
             // Create a Lambda expression from the parameter and body we have already created.
             var copyExpression = Expression.Lambda(initializer, sourceParameter);
@@ -187,6 +187,7 @@ namespace PropertyCopier
                     predicate,
                     methodName,
                     predicateType,
+                    elemType,
                     collectionType,
                     expTypes);
             }
@@ -201,6 +202,7 @@ namespace PropertyCopier
         /// <param name="mappingData">The mapping data.</param>
         /// <returns>Expression for lambda body.</returns>
         internal static Expression CreateLambdaInitializerBody(
+            Type source,
             Type target,
             Expression sourceParameter,
             MappingData mappingData)
@@ -323,6 +325,7 @@ namespace PropertyCopier
             LambdaExpression delegateExpression,
             string methodName,
             Type delegateType,
+            Type elementType,
             Type collectionType,
             Type[] delegateGenericParamaters)
         {
